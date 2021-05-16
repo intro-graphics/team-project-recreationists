@@ -1,3 +1,15 @@
+# how to test your code with the server (should be easy)
+
+Instead of the usual way we see our actual objects, refer to the following steps:
+
+1) git clone/pull this repo 
+2) enter the team-project-recreationists folder
+3) type 'npm install' in CLI (get npm if you don't already have it)
+4) type 'node index.js'
+5) visit localhost:5000
+
+if there are any problems following these steps reach out to me on discord.
+
 # tiny-graphics.js
 
 This is a small, single file JavaScript utility.  It organizes WebGL programs to be object-oriented and minimally cluttered.  
