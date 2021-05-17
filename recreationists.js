@@ -12,6 +12,7 @@ class G {
         sphere: new defs.Subdivision_Sphere(4),
         circle: new defs.Regular_2D_Polygon(1, 15),
         cube: new defs.Cube(),
+        square: new defs.Square(),
   
     };
 
@@ -51,6 +52,16 @@ export class Recreationists extends Scene {
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+            brickGround: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#fcc89a"), smoothness: 60}),
+            sky: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
+            sun: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 0.5, color: hex_color("#f7c600"), smoothness: 100}),
+            whiteSquare: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
+            grass: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#2f8214"), smoothness: 60}),
           
         }
 
@@ -82,8 +93,8 @@ export class Recreationists extends Scene {
             Math.PI / 4, context.width / context.height, .1, 1000);
 
         // TODO: Lighting (Requirement 2)
-        const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        //const light_position = vec4(0, 5, 5, 1);
+        //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
@@ -101,6 +112,83 @@ export class Recreationists extends Scene {
             }
         }
         
+        // Draw the background
+        //---------------------------------------------------
+        
+        // Set coordinate system matrix at the origin
+        let model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.translation(0, 0, 0));
+        
+        // Draw the sun
+        let radius = 20; // radius of sun
+        let distance = 100; // distance of sun from origin
+        let height = 400;
+        model_transform = model_transform.times(Mat4.translation(0,height,0))
+                                         .times(Mat4.translation(0,0,-distance))
+                                         .times(Mat4.scale(radius,radius,radius));
+        
+
+        // Place light at the sun 
+        const light_position = vec4(0, height, -distance, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**radius)];
+        
+        G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sun);
+
+        // Define the directions: +Y: UP
+        //                        -Y: DOWN
+        //                        +X: RIGHT    (Toward Powell)
+        //                        -X: LEFT     (Toward Royce)
+        //                        +Z: Backward (Toward the hill)
+        //                        -Z: Forward  (Toward the campus)
+
+
+        // Draw the sky as a giant blue sphere
+        model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.scale(500,500,500));
+        G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sky);
+        model_transform = Mat4.identity();
+
+        // Draw the ground
+        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.scale(1000,1000,1));
+        G.shapes.square.draw(context, program_state, model_transform, this.materials.brickGround);
+        
+        // to-do: Draw the squares on the ground like a grid
+        //model_transform = Mat4.identity();
+        //model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+        //                                 .times(Mat4.scale(1,1,1))
+        //                                 .times(Mat4.translation(-5,5,0));
+        //G.shapes.square.draw(context, program_state, model_transform, this.materials.whiteSquare);
+        //for (let i=-5; i<5; i=i+1)
+        //{
+        //    for (let j=5; j>-5; j=j-1)
+        //    {
+        //        model_transform = model_transform.times(Mat4.translation(i+0.2,j+0.2,0));
+        //        G.shapes.square.draw(context, program_state, model_transform, this.materials.whiteSquare);
+        //    }
+        //}
+
+        model_transform = Mat4.identity();
+
+        // Draw the grass
+        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.translation(0,60,-0.01))
+                                         .times(Mat4.scale(80,40,1));
+        G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
+        model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.translation(0,-60,-0.01))
+                                         .times(Mat4.scale(80,40,1));
+        G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
+        model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.translation(0,-180,-0.01))
+                                         .times(Mat4.scale(80,60,1));
+        G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
+        
+        
+        //---------------------------------------------------
+
         this.game.update(context, program_state);
         this.game.draw(context, program_state);
 
@@ -181,7 +269,7 @@ class Game {
     // that you actually control in the game.
 class Player {
     constructor(socket_id) {
-        this.player_matrix = Mat4.identity();
+        this.player_matrix = Mat4.identity().times(Mat4.translation(0,1,0));
         this.socket_id = socket_id;
     }
 
