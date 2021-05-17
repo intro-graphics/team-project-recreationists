@@ -99,7 +99,7 @@ export class Recreationists extends Scene {
         
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        
+        /*
         if (this.move !== undefined) {
             if (this.move === true) {
                 this.move = false;
@@ -111,6 +111,7 @@ export class Recreationists extends Scene {
                 program_state.set_camera(this.camera_matrix);
             }
         }
+        */
         
         // Draw the background
         //---------------------------------------------------
@@ -312,7 +313,7 @@ class LocalPlayer extends Player {
                                                                 .times(Mat4.translation(0,2,10))
                                                                 //.times(Mat4.rotation(Math.PI/4,0,0,0))
                                              );
-            //program_state.set_camera(this.camera_matrix);
+            program_state.set_camera(this.camera_matrix);
           
         }
         if (G.keys_pressed['l'] === true) {
@@ -324,7 +325,7 @@ class LocalPlayer extends Player {
                                                                 .times(Mat4.translation(0,2,10))
                                                                 //.times(Mat4.rotation(Math.PI/4,0,0,0))
                                              );
-            //program_state.set_camera(this.camera_matrix);
+            program_state.set_camera(this.camera_matrix);
           
         }
         if (G.keys_pressed['h'] === true) {
@@ -336,7 +337,7 @@ class LocalPlayer extends Player {
                                                                 .times(Mat4.translation(0,2,10))
                                                                 //.times(Mat4.rotation(Math.PI/4,0,0,0))
                                              );
-            //program_state.set_camera(this.camera_matrix);
+            program_state.set_camera(this.camera_matrix);
           
         }
         if (G.keys_pressed['j'] === true) {
@@ -346,7 +347,7 @@ class LocalPlayer extends Player {
                                                                 .times(Mat4.translation(0,2,10))
                                                                 //.times(Mat4.rotation(Math.PI/4,0,0,0))
                                              );
-            //program_state.set_camera(this.camera_matrix);
+            program_state.set_camera(this.camera_matrix);
           
         }
     }
