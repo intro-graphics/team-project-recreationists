@@ -37,7 +37,11 @@ class G {
 
         // dictionary of all keys pressed
     static keys_pressed = {};
+
+        // if any key was pressed (used for initial camera)
+    static key_was_pressed = false;
 }
+
 
 export class Recreationists extends Scene {
     constructor() {
@@ -45,7 +49,6 @@ export class Recreationists extends Scene {
         super();
 
         this.player_matrix = Mat4.identity();
-        this.camera_matrix = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
        
         // *** Materials
@@ -77,6 +80,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Turn left", ["h"], () => G.keys_pressed["h"] = true);
         this.key_triggered_button("Turn right", ["l"], () => G.keys_pressed["l"] = true);
         this.key_triggered_button("Move backwards", ["j"], () => G.keys_pressed["j"] = true);
+        this.key_triggered_button("Jump", ["m"], () => G.keys_pressed["m"] = true);
     
     }
 
@@ -86,7 +90,7 @@ export class Recreationists extends Scene {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(this.camera_matrix);
+            //program_state.set_camera(this.camera_matrix);
         }
 
         program_state.projection_transform = Mat4.perspective(
@@ -270,7 +274,7 @@ class Game {
     // that you actually control in the game.
 class Player {
     constructor(socket_id) {
-        this.player_matrix = Mat4.identity().times(Mat4.translation(0,1,0));
+        this.player_matrix = Mat4.identity().times(Mat4.translation(0,10,0));
         this.socket_id = socket_id;
     }
 
@@ -299,6 +303,15 @@ class Player {
 class LocalPlayer extends Player {
     constructor() {
         super();
+        this.camera_matrix = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.acceleration = new Vector([0, 0, 0]);
+        this.velocity = new Vector([0, 0, 0]);
+        this.jumping = false;
+    }
+
+        // for physics calculation
+    apply_force(force) {
+        this.acceleration = this.acceleration.plus(force);
     }
 
     key_pressed(context, program_state) {
@@ -307,54 +320,87 @@ class LocalPlayer extends Player {
         let z = this.player_matrix[2];
         //console.log(x,y,z);
         if (G.keys_pressed['k'] === true) {
+            this.key_was_pressed = true;
             G.keys_pressed['k'] = false;
+            this.acceleration = this.acceleration.plus([0,0,-1]);
+            
             this.player_matrix = this.player_matrix.times(Mat4.translation(0,0,-1));
-            this.camera_matrix = Mat4.inverse(this.player_matrix
-                                                                .times(Mat4.translation(0,2,10))
-                                                                //.times(Mat4.rotation(Math.PI/4,0,0,0))
-                                             );
-            program_state.set_camera(this.camera_matrix);
+            
           
         }
         if (G.keys_pressed['l'] === true) {
+            this.key_was_pressed = true;
             G.keys_pressed['l'] = false;
             this.player_matrix = this.player_matrix
                                                     .times(Mat4.rotation(-Math.PI/4,0,1,0))
                                                     //.times(Mat4.translation(0,0,-z));
-            this.camera_matrix = Mat4.inverse(this.player_matrix
-                                                                .times(Mat4.translation(0,2,10))
-                                                                //.times(Mat4.rotation(Math.PI/4,0,0,0))
-                                             );
-            program_state.set_camera(this.camera_matrix);
+                                              
           
         }
         if (G.keys_pressed['h'] === true) {
+            this.key_was_pressed = true;
             G.keys_pressed['h'] = false;
             this.player_matrix = this.player_matrix
                                                     .times(Mat4.rotation(Math.PI/4,0,1,0))
                                                     //.times(Mat4.translation(0,0,-z));
-            this.camera_matrix = Mat4.inverse(this.player_matrix
-                                                                .times(Mat4.translation(0,2,10))
-                                                                //.times(Mat4.rotation(Math.PI/4,0,0,0))
-                                             );
-            program_state.set_camera(this.camera_matrix);
+         
           
         }
         if (G.keys_pressed['j'] === true) {
+            this.key_was_pressed = true;
             G.keys_pressed['j'] = false;
             this.player_matrix = this.player_matrix.times(Mat4.translation(0,0,1));
-            this.camera_matrix = Mat4.inverse(this.player_matrix
-                                                                .times(Mat4.translation(0,2,10))
-                                                                //.times(Mat4.rotation(Math.PI/4,0,0,0))
-                                             );
-            program_state.set_camera(this.camera_matrix);
+        
+        }
+        if (G.keys_pressed['m'] === true) {
+            this.key_was_pressed = true;
+            G.keys_pressed['m'] = false;
+            if (!this.jumping) {
+                
+                this.jumping = true;
+                //this.player_matrix = this.player_matrix.times(Mat4.translation(0,1,0));
+                console.log("m pressed");
+                this.apply_force([0, 9.8*0.05, 0]);
+            }
           
         }
+
+        
+
+        //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
+        //program_state.set_camera(desired);
+        
+
     }
      
     
     update(context, program_state) {
         this.key_pressed(context, program_state);
+        if (this.key_was_pressed) {
+            this.camera_matrix = Mat4.inverse(this.player_matrix
+                .times(Mat4.translation(0,2,10))
+                //.times(Mat4.rotation(Math.PI/4,0,0,0))
+            );
+        }
+        program_state.set_camera(this.camera_matrix);
+
+        this.apply_force([0, -9.8*0.001, 0]);
+
+        //console.log(this.velocity);
+        this.velocity = this.velocity.plus(this.acceleration);
+
+        // stop at the ground 
+        if (this.player_matrix[1][3] <= 1.25 && this.velocity[1] < 0) {
+            //this.velocity = [this.velocity[0], 0, this.velocity[1]];
+            this.velocity[1] = 0;
+            this.jumping = false;
+        }
+
+        this.player_matrix = this.player_matrix.times(Mat4.translation(0,this.velocity[1],0,)); //this.velocity.z));
+        //this.player_matrix = this.player_matrix.times(Mat4.translation(0,-0.001,0,)); //this.velocity.z));
+
+        this.acceleration = this.acceleration.times(0);
+        //console.log(this.acceleration);
 
         // tell the server our position
         G.socket.emit('update', {
