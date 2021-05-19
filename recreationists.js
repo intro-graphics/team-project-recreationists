@@ -13,32 +13,32 @@ class G {
         circle: new defs.Regular_2D_Polygon(1, 15),
         cube: new defs.Cube(),
         square: new defs.Square(),
-  
+
     };
 
     static materials = {
         test: new Material(new defs.Phong_Shader(),
             {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-  
+
     };
-        // all of the data from other clients (dictionary, socketid to player info)
+    // all of the data from other clients (dictionary, socketid to player info)
     static remote_data = {};
-        // the socket we used
+    // the socket we used
     static socket;
-    
-        // the id of the player according to the server
+
+    // the id of the player according to the server
     static player_id;
 
-        // a dictionary of socket id to remote player
+    // a dictionary of socket id to remote player
     static remote_players = {};
 
-        // used to test stop displaying blocks (can remove)
+    // used to test stop displaying blocks (can remove)
     static test = false;
 
-        // dictionary of all keys pressed
+    // dictionary of all keys pressed
     static keys_pressed = {};
 
-        // if any key was pressed (used for initial camera)
+    // if any key was pressed (used for initial camera)
     static key_was_pressed = false;
 }
 
@@ -50,7 +50,7 @@ export class Recreationists extends Scene {
 
         this.player_matrix = Mat4.identity();
 
-       
+
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
@@ -65,7 +65,7 @@ export class Recreationists extends Scene {
                 {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
             grass: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#2f8214"), smoothness: 60}),
-          
+
         }
 
         this.game = new Game();
@@ -81,7 +81,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Turn right", ["l"], () => G.keys_pressed["l"] = true);
         this.key_triggered_button("Move backwards", ["j"], () => G.keys_pressed["j"] = true);
         this.key_triggered_button("Jump", ["m"], () => G.keys_pressed["m"] = true);
-    
+
     }
 
     display(context, program_state) {
@@ -100,7 +100,7 @@ export class Recreationists extends Scene {
         //const light_position = vec4(0, 5, 5, 1);
         //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        
+
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         /*
@@ -116,27 +116,27 @@ export class Recreationists extends Scene {
             }
         }
         */
-        
+
         // Draw the background
         //---------------------------------------------------
-        
+
         // Set coordinate system matrix at the origin
         let model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.translation(0, 0, 0));
-        
+
         // Draw the sun
         let radius = 20; // radius of sun
         let distance = 100; // distance of sun from origin
         let height = 400;
-        model_transform = model_transform.times(Mat4.translation(0,height,0))
-                                         .times(Mat4.translation(0,0,-distance))
-                                         .times(Mat4.scale(radius,radius,radius));
-        
+        model_transform = model_transform.times(Mat4.translation(0, height, 0))
+            .times(Mat4.translation(0, 0, -distance))
+            .times(Mat4.scale(radius, radius, radius));
 
-        // Place light at the sun 
+
+        // Place light at the sun
         const light_position = vec4(0, height, -distance, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**radius)];
-        
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10 ** radius)];
+
         G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sun);
 
         // Define the directions: +Y: UP
@@ -149,15 +149,15 @@ export class Recreationists extends Scene {
 
         // Draw the sky as a giant blue sphere
         model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.scale(500,500,500));
+        model_transform = model_transform.times(Mat4.scale(500, 500, 500));
         G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sky);
         model_transform = Mat4.identity();
 
         // Draw the ground
-        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                         .times(Mat4.scale(1000,1000,1));
+        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.scale(1000, 1000, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.brickGround);
-        
+
         // to-do: Draw the squares on the ground like a grid
         //model_transform = Mat4.identity();
         //model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
@@ -176,22 +176,22 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity();
 
         // Draw the grass
-        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                         .times(Mat4.translation(0,60,-0.01))
-                                         .times(Mat4.scale(80,40,1));
+        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.translation(0, 60, -0.01))
+            .times(Mat4.scale(80, 40, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
         model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                         .times(Mat4.translation(0,-60,-0.01))
-                                         .times(Mat4.scale(80,40,1));
+        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.translation(0, -60, -0.01))
+            .times(Mat4.scale(80, 40, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
         model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                         .times(Mat4.translation(0,-180,-0.01))
-                                         .times(Mat4.scale(80,60,1));
+        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.translation(0, -180, -0.01))
+            .times(Mat4.scale(80, 60, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
-        
-        
+
+
         //---------------------------------------------------
 
         this.game.update(context, program_state);
@@ -201,31 +201,30 @@ export class Recreationists extends Scene {
     }
 }
 
-    // This is the game class, it is used to keep track of all the active entities in the game (such as 
-    // all of the connected players). It calls every objects' update method and then their draw method.
-    // use the update method to determine if collisions have occured or to calculate position. Then draw.
-    // ( Not implemented) IT also centralizes all of the input from the keyboard.
-class Game { 
+// This is the game class, it is used to keep track of all the active entities in the game (such as
+// all of the connected players). It calls every objects' update method and then their draw method.
+// use the update method to determine if collisions have occured or to calculate position. Then draw.
+// ( Not implemented) IT also centralizes all of the input from the keyboard.
+class Game {
     constructor() {
         this.entities = [];
-        
+
         let local_player = new LocalPlayer();
         this.entities.push(local_player);
 
         const socket = io.connect();
-		socket.on('setId', function(data){
-			G.player_id = data.id;
+        socket.on('setId', function (data) {
+            G.player_id = data.id;
             local_player.socket_id = data.id;
-		});
-		socket.on('remote_data', function(data){
+        });
+        socket.on('remote_data', function (data) {
             //console.log(data);
-			//console.log("recieved remote data");
+            //console.log("recieved remote data");
             data.forEach(function (i, index) {
                 if (i.player_matrix !== false && i.id !== G.player_id) {
-                    if ( !(i.id in G.remote_players)) {
+                    if (!(i.id in G.remote_players)) {
                         //console.log(i, index);
-                        let new_player = new Player(i.id);
-                        G.remote_players[i.id] = new_player;
+                        G.remote_players[i.id] = new Player(i.id);
                         //console.log(i.player_matrix);
                         G.remote_data[i.id] = i.player_matrix;
                         console.log(`created player ${i.id}`);
@@ -234,47 +233,50 @@ class Game {
                     }
 
                 }
-                
-            //console.log(item, index);
+
+                //console.log(item, index);
             });
-            
-		});
-        
-		socket.on('deletePlayer', function(data){
+
+        });
+
+        socket.on('deletePlayer', function (data) {
             console.log(`deleted player ${socket.id}`);
             G.remote_players[data.id] = false;
             //delete G.remote_players[socket.id];
             console.log(G.remote_players);
-            
-		});
-        
+
+        });
 
 
         G.socket = socket;
     }
-   
-    
+
+
     update(context, program_state) {
         this.entities.map(x => x.update(context, program_state));
         for (let i in G.remote_players) {
-            if (G.remote_players[i] !== false) { G.remote_players[i].update(context, program_state); }
-        } 
+            if (G.remote_players[i] !== false) {
+                G.remote_players[i].update(context, program_state);
+            }
+        }
     }
 
     draw(context, program_state) {
         this.entities.map(x => x.draw(context, program_state));
         for (let i in G.remote_players) {
-            if (G.remote_players[i] !== false) { G.remote_players[i].draw(context, program_state); }
-        } 
+            if (G.remote_players[i] !== false) {
+                G.remote_players[i].draw(context, program_state);
+            }
+        }
 
     }
 }
 
-    // This is a general player. It is used to make adding new players easy. Use local player for the player 
-    // that you actually control in the game.
+// This is a general player. It is used to make adding new players easy. Use local player for the player
+// that you actually control in the game.
 class Player {
     constructor(socket_id) {
-        this.player_matrix = Mat4.identity().times(Mat4.translation(0,10,0));
+        this.player_matrix = Mat4.identity().times(Mat4.translation(0, 10, 0));
         this.socket_id = socket_id;
     }
 
@@ -286,8 +288,8 @@ class Player {
             //console.log(pos);
             this.player_matrix = Matrix.of(pos[0], pos[1], pos[2], pos[3]);
         }
-        
-      
+
+
     }
 
     draw(context, program_state) {
@@ -298,8 +300,8 @@ class Player {
     }
 }
 
-    // this is for the player that the user actually controls. The parent class player is also used for 
-    // connected players
+// this is for the player that the user actually controls. The parent class player is also used for
+// connected players
 class LocalPlayer extends Player {
     constructor() {
         super();
@@ -309,7 +311,7 @@ class LocalPlayer extends Player {
         this.jumping = false;
     }
 
-        // for physics calculation
+    // for physics calculation
     apply_force(force) {
         this.acceleration = this.acceleration.plus(force);
     }
@@ -322,81 +324,80 @@ class LocalPlayer extends Player {
         if (G.keys_pressed['k'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['k'] = false;
-            this.acceleration = this.acceleration.plus([0,0,-1]);
-            
-            this.player_matrix = this.player_matrix.times(Mat4.translation(0,0,-1));
-            
-          
+            this.acceleration = this.acceleration.plus([0, 0, -1]);
+
+            this.player_matrix = this.player_matrix.times(Mat4.translation(0, 0, -1));
+
+
         }
         if (G.keys_pressed['l'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['l'] = false;
             this.player_matrix = this.player_matrix
-                                                    .times(Mat4.rotation(-Math.PI/4,0,1,0))
-                                                    //.times(Mat4.translation(0,0,-z));
-                                              
-          
+                .times(Mat4.rotation(-Math.PI / 4, 0, 1, 0))
+            //.times(Mat4.translation(0,0,-z));
+
+
         }
         if (G.keys_pressed['h'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['h'] = false;
             this.player_matrix = this.player_matrix
-                                                    .times(Mat4.rotation(Math.PI/4,0,1,0))
-                                                    //.times(Mat4.translation(0,0,-z));
-         
-          
+                .times(Mat4.rotation(Math.PI / 4, 0, 1, 0))
+            //.times(Mat4.translation(0,0,-z));
+
+
         }
         if (G.keys_pressed['j'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['j'] = false;
-            this.player_matrix = this.player_matrix.times(Mat4.translation(0,0,1));
-        
+            this.player_matrix = this.player_matrix.times(Mat4.translation(0, 0, 1));
+
         }
         if (G.keys_pressed['m'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['m'] = false;
             if (!this.jumping) {
-                
+
                 this.jumping = true;
                 //this.player_matrix = this.player_matrix.times(Mat4.translation(0,1,0));
                 console.log("m pressed");
-                this.apply_force([0, 9.8*0.05, 0]);
+                this.apply_force([0, 9.8 * 0.05, 0]);
             }
-          
+
         }
 
-        
 
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
         //program_state.set_camera(desired);
-        
+
 
     }
-     
-    
+
+
     update(context, program_state) {
         this.key_pressed(context, program_state);
         if (this.key_was_pressed) {
             this.camera_matrix = Mat4.inverse(this.player_matrix
-                .times(Mat4.translation(0,2,10))
+                    .times(Mat4.translation(0, 2, 10))
                 //.times(Mat4.rotation(Math.PI/4,0,0,0))
             );
         }
         program_state.set_camera(this.camera_matrix);
 
-        this.apply_force([0, -9.8*0.001, 0]);
+        this.apply_force([0, -9.8 * 0.001, 0]);
 
         //console.log(this.velocity);
         this.velocity = this.velocity.plus(this.acceleration);
 
-        // stop at the ground 
+        // stop at the ground
         if (this.player_matrix[1][3] <= 1.25 && this.velocity[1] < 0) {
             //this.velocity = [this.velocity[0], 0, this.velocity[1]];
             this.velocity[1] = 0;
             this.jumping = false;
         }
 
-        this.player_matrix = this.player_matrix.times(Mat4.translation(0,this.velocity[1],0,)); //this.velocity.z));
+        this.player_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], 0,)); //this.velocity.z));
         //this.player_matrix = this.player_matrix.times(Mat4.translation(0,-0.001,0,)); //this.velocity.z));
 
         this.acceleration = this.acceleration.times(0);
@@ -405,12 +406,12 @@ class LocalPlayer extends Player {
         // tell the server our position
         G.socket.emit('update', {
             player_matrix: this.player_matrix,
-            
+
         })
     }
 
     //draw(context, program_state) {
-        //G.shapes.cube.draw(context, program_state, this.player_matrix, G.materials.test);
+    //G.shapes.cube.draw(context, program_state, this.player_matrix, G.materials.test);
 
     //}
 }
