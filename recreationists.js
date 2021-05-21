@@ -12,10 +12,14 @@ class G {
         torus: new defs.Torus(15, 15),
         torus2: new defs.Torus(3, 15),
         sphere: new defs.Subdivision_Sphere(4),
-        circle: new defs.Regular_2D_Polygon(1, 15),
+        circle: new defs.Regular_2D_Polygon(10, 15),
         cube: new defs.Cube(),
         square: new defs.Square(),
         cylinder: new defs.Cylindrical_Tube(15, 15),
+        prism: new defs.Capped_Cylinder(10,4),
+        octogon: new defs.Capped_Cylinder(1,8),
+        pyramid: new defs.Cone_Tip(1,4),
+        cone: new defs.Cone_Tip(1,100),
     };
 
     static materials = {
@@ -77,6 +81,11 @@ export class Recreationists extends Scene {
                 {ambient: 1, diffusivity: 1, color: hex_color("#875d53"), smoothness: 60}),
             lamppost: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#1a1a00"), smoothness: 100}),
+            building: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
+            roof: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 0.6, color: hex_color("#ff8c57"), smoothness: 60}),
+
 
         }
 
@@ -298,7 +307,123 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity().times(Mat4.translation(70, 0, 103))
         .times(Mat4.scale(7, 2, 2));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass)
-        //---------------------------------------------------
+        
+        
+
+        // Draw buildings:
+        // 1) Draw simple building
+        // Box
+        model_transform = Mat4.identity().times(Mat4.translation(-125,0,-180))
+                                         .times(Mat4.scale(25,40,60));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Roof
+        model_transform = Mat4.identity().times(Mat4.translation(-125,40,-180))
+                                         .times(Mat4.scale(25,10,119.8));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        
+        // 2) Draw Royce
+        // Rear Box 
+        model_transform = Mat4.identity().times(Mat4.translation(-145,0,0))
+                                         .times(Mat4.scale(25,35,80));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Roof for Rear Box
+        model_transform = Mat4.identity().times(Mat4.translation(-145,35,0))
+                                         .times(Mat4.scale(25,9,159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        // Draw middle box
+        model_transform = Mat4.identity().times(Mat4.translation(-160,0,0))
+                                         .times(Mat4.scale(60,35,30));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Draw middle box roof
+        model_transform = Mat4.identity().times(Mat4.translation(-160,35,0))
+                                         .times(Mat4.rotation(Math.PI/2,0,1,0))
+                                         .times(Mat4.scale(30,20,120));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.building);
+        // Draw two towers with their rooves
+        // First tower
+        model_transform = Mat4.identity().times(Mat4.translation(-110,0,-35))
+                                         .times(Mat4.scale(12,70,10));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // to-do: Draw a pyramid roof
+        
+        // Second tower
+        model_transform = Mat4.identity().times(Mat4.translation(-110,0,35))
+                                         .times(Mat4.scale(12,70,10));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // to-do: Draw a pyramid roof
+ 
+        // 3) Draw Powell
+        // Main Box 
+        model_transform = Mat4.identity().times(Mat4.translation(220,0,0))
+                                         .times(Mat4.scale(100,50,80));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Roof for Main Box
+        model_transform = Mat4.identity().times(Mat4.translation(120+25,50,0))
+                                         .times(Mat4.scale(25,12,159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        model_transform = Mat4.identity().times(Mat4.translation(120+75,50,0))
+                                         .times(Mat4.scale(25,12,159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        model_transform = Mat4.identity().times(Mat4.translation(120+125,50,0))
+                                         .times(Mat4.scale(25,12,159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        model_transform = Mat4.identity().times(Mat4.translation(120+175,50,0))
+                                         .times(Mat4.scale(25,12,159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        // Draw entrance inner building
+        model_transform = Mat4.identity().times(Mat4.translation(215,0,0))
+                                         .times(Mat4.scale(105,50,25));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Draw roof for entrance
+        model_transform = Mat4.identity().times(Mat4.translation(215,50,0))
+                                         .times(Mat4.rotation(Math.PI/2,0,1,0))
+                                         .times(Mat4.scale(25,10,210));
+        G.shapes.prism.draw(context, program_state, model_transform, this.materials.building);
+        // Draw the two columns
+        // First column 
+        model_transform = Mat4.identity().times(Mat4.translation(110,0,-25))
+                                         .times(Mat4.scale(2.5,60,2.5));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Place cone above tower
+        model_transform = Mat4.identity().times(Mat4.translation(110,60+4,-25))
+                                         .times(Mat4.rotation(-Math.PI/2, 1,0,0))
+                                         .times(Mat4.scale(2.5,2.5,4));
+        G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
+        // Second column 
+        // Place cone above tower
+        model_transform = Mat4.identity().times(Mat4.translation(110,0,25))
+                                         .times(Mat4.scale(2.5,60,2.5));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        // Place cone above tower
+        model_transform = Mat4.identity().times(Mat4.translation(110,60+4,25))
+                                         .times(Mat4.rotation(-Math.PI/2, 1,0,0))
+                                         .times(Mat4.scale(2.5,2.5,4));
+        G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
+        // Draw the octogon blocks
+        model_transform = Mat4.identity().times(Mat4.translation(150,0,0))
+                                         .times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.scale(20,20,150));
+        G.shapes.octogon.draw(context, program_state, model_transform, this.materials.roof);
+        model_transform = Mat4.identity().times(Mat4.translation(150,0,0))
+                                         .times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.scale(15,15,170));
+        G.shapes.octogon.draw(context, program_state, model_transform, this.materials.building);
+        // to-do: Place octogon pyramid on top of octogons
+       
+
+        // to-do: Draw fountain
+        // Place circle on top of grass
+        model_transform = Mat4.identity().times(Mat4.translation(0,0.02,100))
+                                         .times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.scale(20,20,1));
+        G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
+        model_transform = Mat4.identity().times(Mat4.translation(0,0.02,-240))
+                                         .times(Mat4.rotation(Math.PI/2,1,0,0))
+                                         .times(Mat4.scale(30,30,1));
+        G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
+        //--------------------------------------------------------------------------------
+        
+
 
         this.game.update(context, program_state);
         this.game.draw(context, program_state);
