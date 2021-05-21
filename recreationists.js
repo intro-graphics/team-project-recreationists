@@ -67,15 +67,15 @@ export class Recreationists extends Scene {
             // brickGround: new Material(new defs.Phong_Shader(),
             //     {ambient: .4, diffusivity: .6, color: hex_color("#fcc89a")}),
             brickGround: new Material(new defs.Phong_Shader(),
-                {ambient: .8, diffusivity: .6, color: hex_color("#fcc89a")}),
+                {ambient: .1, diffusivity: 1, color: hex_color("#fcc89a"), smoothness: 100}),
             sky: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
+                {ambient: 0.2, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.5, color: hex_color("#f7c600"), smoothness: 100}),
             whiteSquare: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
             grass: new Material(new defs.Phong_Shader(),
-                {ambient: 0.8, diffusivity: 1, color: hex_color("#2f8214"), smoothness: 60}),
+                {ambient: .2, diffusivity: 0.9, color: hex_color("#2f8214"), smoothness: 60}),
             tree_bark: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#663300"), smoothness: 60}),
             flower_center: new Material(new defs.Phong_Shader(),
@@ -87,7 +87,7 @@ export class Recreationists extends Scene {
             lamppost: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#1a1a00"), smoothness: 100}),
             building: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
+                {ambient: .2, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
             roof: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#ff8c57"), smoothness: 60}),
 
@@ -204,22 +204,23 @@ export class Recreationists extends Scene {
         model_transform = model_transform.times(Mat4.translation(0, 0, 0));
 
         // Draw the sun
-        let radius = 20; // radius of sun
-        let distance = 100; // distance of sun from origin
-        let height = 4000;
+        const day_time = 10; // seconds that day time should last (12 hours in real life)
+        const day_cycle = Math.PI * t / day_time;
+        let sun_dist = 5000; // distance from sun to origin (as it revolves)
+        let distance = Math.sin(day_cycle) * sun_dist;
+        let height = Math.cos(day_cycle) * sun_dist;
+        let radius = 10; // radius of sun
         model_transform = model_transform.times(Mat4.translation(0, height, 0))
             .times(Mat4.translation(0, 0, -distance))
             .times(Mat4.scale(radius, radius, radius));
 
         // Place light at the sun
         const light_position = vec4(0, height, -distance, 1);
-        const day_time = 2; // seconds that day time should last (12 hours in real life)
-        const brightness = (Math.sin(Math.PI * t / day_time) + 1) / 2;
         program_state.lights = [
             new Light(
                 light_position,
                 color(1, 1, 1, 1),
-                10 ** (radius * (0.1 + brightness))
+                10 ** (radius)
             )
         ];
 
@@ -240,25 +241,25 @@ export class Recreationists extends Scene {
 
         // Draw the ground
         model_transform = model_transform
-            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(1000, 1000, 1))
         G.shapes.square.draw(context, program_state, model_transform, this.materials.brickGround);
 
         model_transform = Mat4.identity();
 
         // Draw the grass
-        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.translation(0, 60, -0.01))
+        model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+            .times(Mat4.translation(0, 60, 0.01))
             .times(Mat4.scale(80, 40, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
         model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.translation(0, -60, -0.01))
+        model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+            .times(Mat4.translation(0, -60, 0.01))
             .times(Mat4.scale(80, 40, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
         model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.translation(0, -180, -0.01))
+        model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+            .times(Mat4.translation(0, -180, 0.01))
             .times(Mat4.scale(80, 60, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
 
@@ -271,8 +272,8 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity().times(Mat4.translation(70, 0, 103))
         .times(Mat4.scale(7, 2, 2));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass)
-        
-        
+
+
 
         // Draw buildings:
         // 1) Draw simple building
@@ -284,9 +285,9 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity().times(Mat4.translation(-125,40,-180))
                                          .times(Mat4.scale(25,10,119.8));
         G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-        
+
         // 2) Draw Royce
-        // Rear Box 
+        // Rear Box
         model_transform = Mat4.identity().times(Mat4.translation(-145,0,0))
                                          .times(Mat4.scale(25,35,80));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
@@ -309,15 +310,15 @@ export class Recreationists extends Scene {
                                          .times(Mat4.scale(12,70,10));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
         // to-do: Draw a pyramid roof
-        
+
         // Second tower
         model_transform = Mat4.identity().times(Mat4.translation(-110,0,35))
                                          .times(Mat4.scale(12,70,10));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
         // to-do: Draw a pyramid roof
- 
+
         // 3) Draw Powell
-        // Main Box 
+        // Main Box
         model_transform = Mat4.identity().times(Mat4.translation(220,0,0))
                                          .times(Mat4.scale(100,50,80));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
@@ -344,7 +345,7 @@ export class Recreationists extends Scene {
                                          .times(Mat4.scale(25,10,210));
         G.shapes.prism.draw(context, program_state, model_transform, this.materials.building);
         // Draw the two columns
-        // First column 
+        // First column
         model_transform = Mat4.identity().times(Mat4.translation(110,0,-25))
                                          .times(Mat4.scale(2.5,60,2.5));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
@@ -353,7 +354,7 @@ export class Recreationists extends Scene {
                                          .times(Mat4.rotation(-Math.PI/2, 1,0,0))
                                          .times(Mat4.scale(2.5,2.5,4));
         G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
-        // Second column 
+        // Second column
         // Place cone above tower
         model_transform = Mat4.identity().times(Mat4.translation(110,0,25))
                                          .times(Mat4.scale(2.5,60,2.5));
@@ -373,7 +374,7 @@ export class Recreationists extends Scene {
                                          .times(Mat4.scale(15,15,170));
         G.shapes.octogon.draw(context, program_state, model_transform, this.materials.building);
         // to-do: Place octogon pyramid on top of octogons
-       
+
 
         // to-do: Draw fountain
         // Place circle on top of grass
@@ -386,7 +387,7 @@ export class Recreationists extends Scene {
                                          .times(Mat4.scale(30,30,1));
         G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
         //--------------------------------------------------------------------------------
-        
+
 
 
         this.game.update(context, program_state);
