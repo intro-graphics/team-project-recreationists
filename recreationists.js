@@ -20,8 +20,7 @@ class G {
 
     static materials = {
         test: new Material(new defs.Phong_Shader(),
-            {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-
+            {ambient: .2, diffusivity: .8, color: hex_color("#ffffff")}),
     };
     // all of the data from other clients (dictionary, socketid to player info)
     static remote_data = {};
@@ -57,8 +56,14 @@ export class Recreationists extends Scene {
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+            // brickGround: new Material(new Shadow_Textured_Phong(1), {
+            //     ambient: 1, diffusivity: .6, color: hex_color("#fcc89a"), smoothness: 60,
+            //     specularity: 0.4, color_texture: null, light_depth_texture: null
+            // }),
+            // brickGround: new Material(new defs.Phong_Shader(),
+            //     {ambient: .4, diffusivity: .6, color: hex_color("#fcc89a")}),
             brickGround: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: .6, color: hex_color("#fcc89a"), smoothness: 60}),
+                {ambient: .8, diffusivity: .6, color: hex_color("#fcc89a")}),
             sky: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
             sun: new Material(new defs.Phong_Shader(),
@@ -66,12 +71,12 @@ export class Recreationists extends Scene {
             whiteSquare: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
             grass: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: .6, color: hex_color("#2f8214"), smoothness: 60}),
+                {ambient: 0.8, diffusivity: 1, color: hex_color("#2f8214"), smoothness: 60}),
             tree_bark: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#663300"), smoothness: 60}),
             flower_center: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#ffff00"), smoothness: 60}),
-            trash_bin: new Material(new defs.Phong_Shader(), 
+            trash_bin: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#4d3319"), smoothness: 60}),
             brick_stairs: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#875d53"), smoothness: 60}),
@@ -81,21 +86,16 @@ export class Recreationists extends Scene {
         }
 
         this.game = new Game();
-
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => G.test = true);//this.initial_camera_location);
-        this.new_line();
         this.key_triggered_button("Move forward", ["k"], () => G.keys_pressed["k"] = true);
         this.key_triggered_button("Turn left", ["h"], () => G.keys_pressed["h"] = true);
         this.key_triggered_button("Turn right", ["l"], () => G.keys_pressed["l"] = true);
         this.key_triggered_button("Move backwards", ["j"], () => G.keys_pressed["j"] = true);
         this.key_triggered_button("Jump", ["m"], () => G.keys_pressed["m"] = true);
-
     }
-
 
     draw_tree(context, program_state, x, y, z) {
         var model_transform = Mat4.identity().times(Mat4.translation(x, y, z))
@@ -124,7 +124,6 @@ export class Recreationists extends Scene {
                                             .times(Mat4.scale(.1, .5, .05));
             G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass.override({color: hex_color(petal_color)}));
         }
-
     }
 
     draw_trash(context, program_state, x, y, z) {
@@ -134,7 +133,6 @@ export class Recreationists extends Scene {
         .times(Mat4.scale(1, 1, 3.5));
 
         G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.trash_bin);
-
     }
 
     draw_stairs(context, program_state, x, y, z, length, num_steps, size) {
@@ -150,7 +148,6 @@ export class Recreationists extends Scene {
             .times(Mat4.scale(size, size, length ));
 
         }
-
     }
 
     draw_lamppost(context, program_state, x, y, z) {
@@ -188,26 +185,7 @@ export class Recreationists extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        // TODO: Lighting (Requirement 2)
-        //const light_position = vec4(0, 5, 5, 1);
-        //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
-
-
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        /*
-        if (this.move !== undefined) {
-            if (this.move === true) {
-                this.move = false;
-                this.player_matrix = this.player_matrix.times(Mat4.translation(0,0,-1));
-                this.camera_matrix = Mat4.inverse(this.player_matrix
-                                                                    .times(Mat4.translation(0,2,10))
-                                                                    //.times(Mat4.rotation(Math.PI/4,0,0,0))
-                                                 );
-                program_state.set_camera(this.camera_matrix);
-            }
-        }
-        */
+        const t = program_state.animation_time / 1000;
 
         // Draw the background
         //---------------------------------------------------
@@ -219,15 +197,22 @@ export class Recreationists extends Scene {
         // Draw the sun
         let radius = 20; // radius of sun
         let distance = 100; // distance of sun from origin
-        let height = 400;
+        let height = 4000;
         model_transform = model_transform.times(Mat4.translation(0, height, 0))
             .times(Mat4.translation(0, 0, -distance))
             .times(Mat4.scale(radius, radius, radius));
 
-
         // Place light at the sun
         const light_position = vec4(0, height, -distance, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10 ** radius)];
+        const day_time = 2; // seconds that day time should last (12 hours in real life)
+        const brightness = (Math.sin(Math.PI * t / day_time) + 1) / 2;
+        program_state.lights = [
+            new Light(
+                light_position,
+                color(1, 1, 1, 1),
+                10 ** (radius * (0.1 + brightness))
+            )
+        ];
 
         G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sun);
 
@@ -238,7 +223,6 @@ export class Recreationists extends Scene {
         //                        +Z: Backward (Toward the hill)
         //                        -Z: Forward  (Toward the campus)
 
-
         // Draw the sky as a giant blue sphere
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.scale(500, 500, 500));
@@ -246,29 +230,10 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity();
 
         // Draw the ground
-        model_transform = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(1000, 1000, 1));
+        model_transform = model_transform
+            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.scale(1000, 1000, 1))
         G.shapes.square.draw(context, program_state, model_transform, this.materials.brickGround);
-
-        // to-do: Draw the squares on the ground like a grid
-        //model_transform = Mat4.identity();
-        //model_transform = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-        //                                 .times(Mat4.scale(1,1,1))
-        //                                 .times(Mat4.translation(-5,5,0));
-        //G.shapes.square.draw(context, program_state, model_transform, this.materials.whiteSquare);
-        //for (let i=-5; i<5; i=i+1)
-        //{
-        //    for (let j=5; j>-5; j=j-1)
-        //    {
-        //        model_transform = model_transform.times(Mat4.translation(i+0.2,j+0.2,0));
-        //        G.shapes.square.draw(context, program_state, model_transform, this.materials.whiteSquare);
-        //    }
-        //}
-
-        //trying: to draw brick colored lines on ground
-
-
-        //G.shapes.square.draw(context, program_state, model_transform, this.materials.brickGround);
 
         model_transform = Mat4.identity();
 
@@ -288,7 +253,6 @@ export class Recreationists extends Scene {
             .times(Mat4.scale(80, 60, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
 
-
         //start drawing objects
         this.draw_lamppost(context, program_state, 78, 0, 50);
         this.draw_tree(context, program_state, 75, 0, 95);
@@ -302,8 +266,6 @@ export class Recreationists extends Scene {
 
         this.game.update(context, program_state);
         this.game.draw(context, program_state);
-
-
     }
 }
 
@@ -325,7 +287,7 @@ class Game {
         });
         socket.on('remote_data', function (data) {
             //console.log(data);
-            //console.log("recieved remote data");
+            //console.log("received remote data");
             data.forEach(function (i, index) {
                 if (i.player_matrix !== false && i.id !== G.player_id) {
                     if (!(i.id in G.remote_players)) {
@@ -339,10 +301,8 @@ class Game {
                     }
 
                 }
-
                 //console.log(item, index);
             });
-
         });
 
         socket.on('deletePlayer', function (data) {
@@ -350,13 +310,10 @@ class Game {
             G.remote_players[data.id] = false;
             //delete G.remote_players[socket.id];
             console.log(G.remote_players);
-
         });
-
 
         G.socket = socket;
     }
-
 
     update(context, program_state) {
         this.entities.map(x => x.update(context, program_state));
@@ -394,15 +351,10 @@ class Player {
             //console.log(pos);
             this.player_matrix = Matrix.of(pos[0], pos[1], pos[2], pos[3]);
         }
-
-
     }
 
     draw(context, program_state) {
-        //if ( this.socket_id in G.remote_players) {
         G.shapes.cube.draw(context, program_state, this.player_matrix, G.materials.test);
-        //}
-
     }
 }
 
@@ -431,10 +383,7 @@ class LocalPlayer extends Player {
             this.key_was_pressed = true;
             G.keys_pressed['k'] = false;
             this.acceleration = this.acceleration.plus([0, 0, -1]);
-
             this.player_matrix = this.player_matrix.times(Mat4.translation(0, 0, -1));
-
-
         }
         if (G.keys_pressed['l'] === true) {
             this.key_was_pressed = true;
@@ -442,8 +391,6 @@ class LocalPlayer extends Player {
             this.player_matrix = this.player_matrix
                 .times(Mat4.rotation(-Math.PI / 4, 0, 1, 0))
             //.times(Mat4.translation(0,0,-z));
-
-
         }
         if (G.keys_pressed['h'] === true) {
             this.key_was_pressed = true;
@@ -451,35 +398,25 @@ class LocalPlayer extends Player {
             this.player_matrix = this.player_matrix
                 .times(Mat4.rotation(Math.PI / 4, 0, 1, 0))
             //.times(Mat4.translation(0,0,-z));
-
-
         }
         if (G.keys_pressed['j'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['j'] = false;
             this.player_matrix = this.player_matrix.times(Mat4.translation(0, 0, 1));
-
         }
         if (G.keys_pressed['m'] === true) {
             this.key_was_pressed = true;
             G.keys_pressed['m'] = false;
             if (!this.jumping) {
-
                 this.jumping = true;
                 //this.player_matrix = this.player_matrix.times(Mat4.translation(0,1,0));
                 console.log("m pressed");
                 this.apply_force([0, 9.8 * 0.05, 0]);
             }
-
         }
-
-
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
         //program_state.set_camera(desired);
-
-
     }
-
 
     update(context, program_state) {
         this.key_pressed(context, program_state);
@@ -512,12 +449,6 @@ class LocalPlayer extends Player {
         // tell the server our position
         G.socket.emit('update', {
             player_matrix: this.player_matrix,
-
         })
     }
-
-    //draw(context, program_state) {
-    //G.shapes.cube.draw(context, program_state, this.player_matrix, G.materials.test);
-
-    //}
 }
