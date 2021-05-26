@@ -85,6 +85,8 @@ export class Recreationists extends Scene {
                 {ambient: 1, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
             roof: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#ff8c57"), smoothness: 60}),
+            bush: new Material(new defs.Phong_Shader(),
+                {ambient: .75, diffusivity: .1, color: hex_color("#056113"), smoothness: 60}),
 
 
         }
@@ -112,10 +114,10 @@ export class Recreationists extends Scene {
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.tree_bark);
         model_transform = Mat4.identity().times(Mat4.translation(x, y+7, z))
                                             .times(Mat4.scale(3, 2, 3));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass.override({ambient: .5}));
         model_transform = Mat4.identity().times(Mat4.translation(x, y+10, z))
                                             .times(Mat4.scale(2, 1, 2));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass.override({ambient: .6}));
     }
 
     draw_flower(context, program_state, x, y, z, petal_color) {
@@ -298,18 +300,38 @@ export class Recreationists extends Scene {
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
 
 
-        //start drawing objects
+        //start drawing objects, first grass patch
         this.draw_lamppost(context, program_state, 78, 0, 50);
         this.draw_tree(context, program_state, 75, 0, 95);
         this.draw_trash(context, program_state, 80, 0, 102);
         this.draw_trash(context, program_state, 80, 0, 104.5);
+        this.draw_tree(context, program_state, -70, 0 , 90);
+
+        model_transform = Mat4.identity().times(Mat4.translation(-70, 0, 97))
+        .times(Mat4.scale(5, 2, 2));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+
+        this.draw_lamppost(context, program_state, -78, 0, 50);
+
+
+        //second grass patch
+        this.draw_tree(context, program_state, 73, 0, -25);
+        this.draw_tree(context, program_state, 76, 0, -30);
+        this.draw_lamppost(context, program_state, 79, 0, -40);
+        this.draw_lamppost(context, program_state, -79, 0, -40);
+
+
+        //objects next to powell library
+        this.draw_tree(context, program_state, 115, 0, 75);
+        model_transform = Mat4.identity().times(Mat4.translation(113, 0, 79))
+        .times(Mat4.scale(5, 3, 2));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
 
         model_transform = Mat4.identity().times(Mat4.translation(70, 0, 103))
         .times(Mat4.scale(7, 2, 2));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass)
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
         
         
-
         // Draw buildings:
         // 1) Draw simple building
         // Box
