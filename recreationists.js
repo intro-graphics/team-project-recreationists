@@ -149,7 +149,7 @@ class Register {
         for (i = 0; i < G.bodies.length; i++) {
             //console.log(i);
             //console.log(`${G.bodies[i].socket_id} compared`);
-            if (G.bodies[i].socket_id === socket_id) {
+            if (G.bodies[i].socket_id == socket_id) {
                 //console.log("match");
                 G.bodies.splice(i, 1);
             }
@@ -772,7 +772,7 @@ class Player {
     constructor(socket_id) {
         this.player_matrix = Mat4.identity().times(Mat4.translation(Math.random()*40-20, 10, Math.random()*40-20));
         this.socket_id = socket_id;
-        this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
+        this.collision_box = G.register.register(vec3(0, -10, 0), socket_id);
     }
 
     update(context, program_state) {
@@ -815,7 +815,7 @@ class LocalPlayer extends Player {
         // };
         this.collision_matrix = this.player_matrix;
 
-        //this.collision_box = G.register.register(vec3(0, 0, 0));
+        this.local_collision_box = G.register.register(vec3(0, 0, 0), "localplayer");
     }
 
     // for physics calculation
@@ -871,16 +871,21 @@ class LocalPlayer extends Player {
 
     // test if problem in new position
     collision_test(new_position) {
-        this.collision_box.emplace(new_position, 0, 0);
+        this.local_collision_box.emplace(new_position, 0, 0);
 
-        //for (let a of G.bodies) {
+        
+        for (let a of G.bodies) {
+           // a.inverse = Mat4.inverse(a.drawn_location);
+        
             // Cache the inverse of matrix of body "a" to save time.
-        let a = this.collision_box;
-        a.inverse = Mat4.inverse(a.drawn_location);
+        //let a = this.collision_box;
+        //let a = this.local_collision_box;
+            a.inverse = Mat4.inverse(a.drawn_location);
 
         // *** Collision process is here ***
         // Loop through all bodies again (call each "b"):
         for (let b of G.bodies) {
+            if (a.socket_id !== "" && a.socket_id !== "localplayer" ) continue;
             // Pass the two bodies and the collision shape to check_if_colliding():
             if (!a.check_if_colliding(b, G.collider))
                 continue;
@@ -890,10 +895,11 @@ class LocalPlayer extends Player {
             // a.material = this.active_color;
             // a.linear_velocity = vec3(0, 0, 0);
             // a.angular_velocity = 0;
+            console.log(a.socket_id);
             console.log("collision");
             return true;
         }
-        
+    }
     }
 
     update(context, program_state) {
