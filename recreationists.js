@@ -10,9 +10,10 @@ class Body {
     // **Body** can store and update the properties of a 3D body that incrementally
     // moves from its previous place due to velocities.  It conforms to the
     // approach outlined in the "Fix Your Timestep!" blog post by Glenn Fiedler.
-    constructor(shape, material, size) {
+    constructor(shape, material, size, socket_id = "") { // socket_id is optional and only used for players
         Object.assign(this,
             {shape, material, size})
+        this.socket_id = socket_id;
     }
 
     // (within some margin of distance).
@@ -133,22 +134,23 @@ class Register {
         //             vec(0, 0, 0), Math.random()));
     }
 
-    register(location_matrix) {
-        let obj = new Body(G.shapes.box_1, undefined, location_matrix)
+    register(location_matrix, socket_id) { // socket_id is only for remote_players
+        let obj = new Body(G.shapes.box_1, undefined, location_matrix, socket_id)
             .emplace(Mat4.translation(...location_matrix), 0, 0)
 
         G.bodies.push(obj);
         return obj;
     }
 
-    unregister(obj) {
-        console.log("called");
-        console.log(obj);
+    unregister(socket_id) {
+        //console.log("called");
+        //console.log(`${socket_id} unregistered`)
         let i = 0;
         for (i = 0; i < G.bodies.length; i++) {
-            console.log(i);
-            if (G.bodies[i].collision_box === obj) {
-                console.log("match");
+            //console.log(i);
+            //console.log(`${G.bodies[i].socket_id} compared`);
+            if (G.bodies[i].socket_id === socket_id) {
+                //console.log("match");
                 G.bodies.splice(i, 1);
             }
         }
@@ -649,12 +651,12 @@ class Game {
         });
 
         socket.on('deletePlayer', function (data) {
-            console.log(`deleted player ${socket.id}`);
-            G.register.unregister(G.remote_players[data.id].collision_box);
+            console.log(`deleted player ${data.id}`);
+            G.register.unregister(data.id);
             G.remote_players[data.id] = false;
             
             //delete G.remote_players[socket.id];
-            console.log(G.remote_players);
+            //console.log(G.remote_players);
         });
 
         G.socket = socket;
@@ -768,9 +770,9 @@ class Tree {
 // that you actually control in the game.
 class Player {
     constructor(socket_id) {
-        this.player_matrix = Mat4.identity().times(Mat4.translation(0, 10, 0));
+        this.player_matrix = Mat4.identity().times(Mat4.translation(Math.random()*40-20, 10, Math.random()*40-20));
         this.socket_id = socket_id;
-        this.collision_box = G.register.register(vec3(0, 0, 0));
+        this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
     }
 
     update(context, program_state) {
@@ -871,26 +873,27 @@ class LocalPlayer extends Player {
     collision_test(new_position) {
         this.collision_box.emplace(new_position, 0, 0);
 
-        for (let a of G.bodies) {
+        //for (let a of G.bodies) {
             // Cache the inverse of matrix of body "a" to save time.
-            a.inverse = Mat4.inverse(a.drawn_location);
+        let a = this.collision_box;
+        a.inverse = Mat4.inverse(a.drawn_location);
 
-            // *** Collision process is here ***
-            // Loop through all bodies again (call each "b"):
-            for (let b of G.bodies) {
-                // Pass the two bodies and the collision shape to check_if_colliding():
-                if (!a.check_if_colliding(b, G.collider))
-                    continue;
-                // If we get here, we collided, so turn red and zero out the
-                // velocity so they don't inter-penetrate any further.
-                
-                // a.material = this.active_color;
-                // a.linear_velocity = vec3(0, 0, 0);
-                // a.angular_velocity = 0;
-                console.log("collision");
-                return true;
-            }
+        // *** Collision process is here ***
+        // Loop through all bodies again (call each "b"):
+        for (let b of G.bodies) {
+            // Pass the two bodies and the collision shape to check_if_colliding():
+            if (!a.check_if_colliding(b, G.collider))
+                continue;
+            // If we get here, we collided, so turn red and zero out the
+            // velocity so they don't inter-penetrate any further.
+            
+            // a.material = this.active_color;
+            // a.linear_velocity = vec3(0, 0, 0);
+            // a.angular_velocity = 0;
+            console.log("collision");
+            return true;
         }
+        
     }
 
     update(context, program_state) {
@@ -901,11 +904,7 @@ class LocalPlayer extends Player {
         //         //.times(Mat4.rotation(Math.PI/4,0,0,0))
         //     );
         // }
-        this.camera_matrix = Mat4.inverse(this.player_matrix
-            .times(Mat4.translation(0, 2, 10))
-        //.times(Mat4.rotation(Math.PI/4,0,0,0))
-        );
-        program_state.set_camera(this.camera_matrix);
+       
 
         const g = -9.8 * 0.001;
 
@@ -944,8 +943,13 @@ class LocalPlayer extends Player {
 
         this.acceleration = this.acceleration.times(0);
         //console.log(this.acceleration);
-
         
+            // update camera
+        this.camera_matrix = Mat4.inverse(this.player_matrix
+            .times(Mat4.translation(0, 2, 10))
+        //.times(Mat4.rotation(Math.PI/4,0,0,0))
+        );
+        program_state.set_camera(this.camera_matrix);
 
         // tell the server our position
         G.socket.emit('update', {
