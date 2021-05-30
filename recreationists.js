@@ -919,6 +919,7 @@ class LocalPlayer extends Player {
         // test if bottom collision
         this.collision_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], 0));
         if (this.collision_test(this.collision_matrix)) {
+            this.jumping = false;
             this.velocity = vec3(0,0,this.velocity[2]);
         }    
 
