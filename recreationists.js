@@ -538,9 +538,11 @@ export class Recreationists extends Scene {
         let distance = Math.sin(day_cycle) * sun_dist;
         let height = Math.cos(day_cycle) * sun_dist;
         let radius = 10; // radius of sun
-        this.light_position = vec4(1, height, -distance, 1);
+        // this.light_position = vec4(1, height, -distance, 1);
+        this.light_position = vec4(distance, 10, height, 1);
         const light_view_target = vec4(0, 0, 0, 1)
-        const light_brightness = Math.max(Math.cos(day_cycle), 0)
+        // const light_brightness = Math.max(Math.cos(day_cycle), 0)
+        const light_brightness = 0.9;
         const light_color = color(light_brightness, light_brightness, light_brightness, 1);
         program_state.lights = [
             new Light(
@@ -560,7 +562,7 @@ export class Recreationists extends Scene {
             vec3(light_view_target[0], light_view_target[1], light_view_target[2]),
             vec3(0, 1, 0), // assume the light to target will have a up dir of +y
         );
-        const light_field_of_view = 150 * Math.PI / 180;
+        const light_field_of_view = 130 * Math.PI / 180;
         const light_proj_mat = Mat4.perspective(light_field_of_view, 1, 0.5, 500);
         // Bind the Depth Texture Buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
