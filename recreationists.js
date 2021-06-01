@@ -5,7 +5,7 @@ import {
     Depth_Texture_Shader_2D,
     LIGHT_DEPTH_TEX_SIZE,
     Shadow_Textured_Phong_Shader
-} from './shadow-shaders.js'
+} from './shadow-shaders.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -349,81 +349,6 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Toggle day-night cycle", ["Shift", "P"], () => this.day_night_cycle = !this.day_night_cycle);
     }
 
-    draw_tree(context, program_state, x, y, z) {
-        var model_transform = Mat4.identity().times(Mat4.translation(x, y, z))
-            .times(Mat4.scale(.5, 6, .5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.tree_bark);
-        model_transform = Mat4.identity().times(Mat4.translation(x, y + 7, z))
-            .times(Mat4.scale(3, 2, 3));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
-        model_transform = Mat4.identity().times(Mat4.translation(x, y + 10, z))
-            .times(Mat4.scale(2, 1, 2));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
-    }
-
-    draw_flower(context, program_state, x, y, z, petal_color) {
-        var model_transform = Mat4.identity().times(Mat4.translation(x, y, z))
-            .times(Mat4.scale(.1, .6, .1));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
-        model_transform = Mat4.identity().times(Mat4.translation(x, y + .6, z))
-            .times(Mat4.scale(.2, .2, .2));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.flower_center);
-
-        var i;
-        for (i = 10; i < 60; i = i + 10) {
-            model_transform = Mat4.identity().times(Mat4.translation(x, y + .6, z))
-                .times(Mat4.rotation(i, 0, 0, 1))
-                .times(Mat4.scale(.1, .5, .05));
-            G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass.override({color: hex_color(petal_color)}));
-        }
-    }
-
-    draw_trash(context, program_state, x, y, z) {
-        var model_transform = Mat4.identity()
-            .times(Mat4.translation(x, y + 1, z))
-            .times(Mat4.rotation(1.57, 8, 0, 0))
-            .times(Mat4.scale(1, 1, 3.5));
-
-        G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.trash_bin);
-    }
-
-    draw_stairs(context, program_state, x, y, z, length, num_steps, size) {
-        var model_transform = Mat4.identity()
-            .times(Mat4.translation(x, y + size, z))
-            .times(Mat4.scale(size, size, length));
-
-        var i;
-        for (i = 0; i < num_steps; i++) {
-            G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
-            model_transform = Mat4.identity()
-                .times(Mat4.translation(x + size * (i + 1), y + size * (i + 2), z))
-                .times(Mat4.scale(size, size, length));
-        }
-    }
-
-    draw_lamppost(context, program_state, x, y, z) {
-        var model_transform = Mat4.identity()
-            .times(Mat4.translation(x, y + 3, z))
-            .times(Mat4.scale(.1, 10, .1))
-            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
-        G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.lamppost);
-
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(x, y + 8, z))
-            .times(Mat4.scale(.1, .1, 3));
-        G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.lamppost);
-
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(x, y + 7, z + 1.2))
-            .times(Mat4.scale(.5, 1, .5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.flower_center);
-
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(x, y + 7, z - 1.2))
-            .times(Mat4.scale(.5, 1, .5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.flower_center);
-    }
-
     texture_buffer_init(gl) {
         // Depth Texture
         this.lightDepthTexture = gl.createTexture();
@@ -625,19 +550,9 @@ export class Recreationists extends Scene {
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
-            .times(Mat4.translation(0, -180, 0.01))
+            .times(Mat4.translation(0, 180, 0.01))
             .times(Mat4.scale(80, 60, 1));
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
-
-        //start drawing objects
-        this.draw_lamppost(context, program_state, 78, 0, 50);
-        //this.draw_tree(context, program_state, 75, 0, 95);
-        this.draw_trash(context, program_state, 80, 0, 102);
-        this.draw_trash(context, program_state, 80, 0, 104.5);
-
-        model_transform = Mat4.identity().times(Mat4.translation(70, 0, 103))
-            .times(Mat4.scale(7, 2, 2));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass)
 
 
         // Draw buildings:
@@ -768,7 +683,69 @@ class Game {
 
         this.entities = [];
 
+
+        //objects on/near 1st grass patch
         this.entities.push(new Tree(75, 0, 95)); // Jorge's tree
+        this.entities.push(new Trash(80, 0, 102, 1));
+        this.entities.push(new Trash(80, 0, 104.5, 0));
+        this.entities.push(new Lamppost(78, 0, 50));
+        this.entities.push(new Lamppost(-78, 0, 50));
+        this.entities.push(new Bush(70, 0, 103, 7, 2, 2, "#00FF00"));
+
+        //objects on 2nd grass patch
+        this.entities.push(new Tree(73, 0, -25));
+        this.entities.push(new Tree(76, 0, -30));
+        this.entities.push(new Lamppost(79, 0, -40));
+        this.entities.push(new Lamppost(-79, 0, -40));
+
+        //objects on 3rd grass patch
+        this.entities.push(new Lamppost(79, 0, -125));
+        this.entities.push(new Lamppost(-79, 0, -125));
+        this.entities.push(new Tree(73, 0, -150));
+        this.entities.push(new Tree(-73, 0, -150));
+        this.entities.push(new Lamppost(79, 0, -180));
+        this.entities.push(new Lamppost(-79, 0, -180));
+        this.entities.push(new Lamppost(79, 0, -238));
+        this.entities.push(new Lamppost(-79, 0, -238));
+
+        //objects next to powell library
+        this.entities.push(new Tree(115, 0, 75));
+        this.entities.push(new Bush(113, 0, 79, 5, 3, 2, "#00FF00"));
+        this.entities.push(new Stairs(102.5, 0, 0, 27.4, 6, .3, 0));
+            //this.entities.push(new Bush(105, 1.1, 0, 1, 1, 27.4, "#875d53"));
+        this.entities.push(new Stairs(106.5, 2, 0, 27.4, 4, .3, 0));
+
+        //objects next to powell library, left of stairs
+        this.entities.push(new Bush(111, 0, -27, 9, 2.7, 1, "#875d53"));
+            //this.entities.push(new Bush(114, 0, -27, 9, 3.7, 1, "#875d53"));
+        this.entities.push(new Trash(100.7, 0, -30, 1));
+        this.entities.push(new Trash(100.7, 0, -32.5, 0));
+
+        this.entities.push(new Bush(105, 0, -32, 3, 2, 3, "#00FF00"));
+        /*
+        this.entities.push(new Bush(105.6, 0.4, -32, 3, 2, 3, "#00FF00"));
+        this.entities.push(new Bush(106.2, 0.8, -32, 3, 2, 3, "#00FF00"));
+        this.entities.push(new Bush(106.8, 1.2, -32, 3, 2, 3, "#00FF00"));
+        this.entities.push(new Bush(107.4, 1.6, -32, 3, 2, 3, "#00FF00"));
+        this.entities.push(new Bush(108, 2, -32, 3, 2, 3, "#00FF00"));
+        */
+            //this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214")); 
+        this.entities.push(new Bush(115, 0, -60, 5, 5, 25, "#00FF00"));
+
+        //objects next to powell library, right of stairs
+        this.entities.push(new Bush(111, 0, 27, 9, 2.7, 1, "#875d53")); //brick stairs
+            //this.entities.push(new Bush(114, 0, 27, 9, 3.7, 1, "#875d53"));
+            //this.entities.push(new Trash(100.7, 0, 27, 1));
+            //this.entities.push(new Bush(107, .1, 55, 5, .7, 26, "#2f8214"));
+        this.entities.push(new Tree(107, 0, 55));
+        this.entities.push(new Bush(112, 0, 52, 2, 4, 23, "#00FF00"));
+        this.entities.push(new Bush(105, 0, 100, 5, 2, 5, "#2f8214"));
+
+
+        //test
+        //this.entities.push(new Bush(0, 3, 0, 5, 2, 7, "#00FF00"))
+        //this.entities.push(new Stairs(0, 0, 0, 5, 5, .25, 0));
+        //this.entities.push(new Flower(0, 0, 0, "#FF0000"));
 
         this.entities.push(new Royce()); // Bella's Royce Hall
 
@@ -891,30 +868,207 @@ class Tree {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.collision_box = G.register.register(vec3(x, y, z));
+        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
     }
 
     update(context, program_state) {
-
     }
 
     draw(context, program_state, shadow) {
-        let x = this.x;
-        let y = this.y;
-        let z = this.z;
 
-        let model_transform = Mat4.identity().times(Mat4.translation(x, y, z))
+        let model_transform = Mat4.identity().times(Mat4.translation(this.x, this.y, this.z))
             .times(Mat4.scale(.5, 6, .5));
         this.collision_box.emplace(model_transform, 0, 0);
         G.shapes.cube.draw(context, program_state, model_transform, G.materials.tree_bark);
-        model_transform = Mat4.identity().times(Mat4.translation(x, y + 7, z))
+
+        model_transform = Mat4.identity().times(Mat4.translation(this.x, this.y + 7, this.z))
             .times(Mat4.scale(3, 2, 3));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass);
-        model_transform = Mat4.identity().times(Mat4.translation(x, y + 10, z))
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({ambient: .5}));
+
+        model_transform = Mat4.identity().times(Mat4.translation(this.x, this.y + 10, this.z))
             .times(Mat4.scale(2, 1, 2));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass);
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({ambient: .6}));
     }
 }
+
+class Trash {
+    constructor(x, y, z, isBlue) {
+        this.x = x; this.y = y; this.z = z;
+        this.isblue = isBlue;
+        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+
+
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y+1, this.z))
+        .times(Mat4.scale(1, 2, 1));
+        this.collision_box.emplace(model_transform, 0, 0);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y+1, this.z))
+        .times(Mat4.rotation(1.57, 1, 0, 0))
+        .times(Mat4.scale(1, 1, 3.5));
+        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.trash_bin);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y + 2.3, this.z))
+        .times(Mat4.rotation(1.57, 1, 0, 0))
+        .times(Mat4.scale(1.05, 1.05, .6));
+        
+        var color = "";
+
+        if(this.isblue)
+            color = "#0000FF";
+        else
+            color = "#00FF00";
+
+        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.trash_bin.override({color: hex_color(color)}));
+    }
+}
+
+class Lamppost {
+    constructor(x, y, z) {
+        this.x = x; this.y = y; this.z = z;
+        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
+
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y+3, this.z))
+        .times(Mat4.scale(.1, 5, .1));
+        this.collision_box.emplace(model_transform, 0, 0);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y + 3, this.z))
+        .times(Mat4.scale(.1, 10, .1))
+        .times(Mat4.rotation(Math.PI/2, 1, 0, 0));
+        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.lamppost);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y + 8, this.z))
+        .times(Mat4.rotation(1.57, 0, 1, 0))
+        .times(Mat4.scale(.1, .1, 3));
+        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.lamppost);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x + 1.2, this.y + 7, this.z))
+        .times(Mat4.scale(.5, 1, .5));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x - 1.2, this.y + 7, this.z))
+        .times(Mat4.scale(.5, 1, .5));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+    }
+}
+
+class Flower {
+    constructor(x, y, z, color) {
+        this.x = x; this.y = y+.5; this.z = z;
+        this.color = color;
+        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y, this.z))
+        .times(Mat4.scale(.4, 1.5, .1));
+        this.collision_box.emplace(model_transform, 0, 0);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y, this.z))
+        .times(Mat4.scale(.1, .6, .1));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y + .6, this.z))
+        .times(Mat4.scale(.2, .2, .2));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+
+        var i;
+        for (i = 10; i < 60; i = i + 10) {
+            model_transform = Mat4.identity()
+            .times(Mat4.translation(this.x, this.y + .6, this.z))
+            .times(Mat4.rotation(i, 0, 0, 1))
+            .times(Mat4.scale(.1, .5, .05));
+            G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({color: hex_color(this.color)}));
+        }        
+    }
+}
+
+class Stairs {
+    constructor(x, y, z, length, num_steps, size, is_reverse) {
+        this.x = x; this.y = y; this.z = z;
+        this.length = length; this.num_steps = num_steps; this.size = size;
+        this.is_reverse = is_reverse;
+        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+        let approx_reach = this.size * this.num_steps;
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x + .5 * approx_reach, this.y + .5 * approx_reach, this.z))
+        .times(Mat4.scale(.6 * approx_reach, .7 * approx_reach, .9 * this.length))
+        .times(Mat4.rotation(1.57, 0, 1, 0));
+
+        this.collision_box.emplace(model_transform, 0, 0);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y + this.size, this.z))
+        .times(Mat4.scale(this.size, this.size, this.length));
+
+        var orient = 1;
+        if(this.is_reverse)
+            orient = -1;
+
+        var i;
+        for (i = 0; i < this.num_steps; i++) {
+            G.shapes.cube.draw(context, program_state, model_transform, G.materials.brick_stairs);
+            model_transform = Mat4.identity()
+            .times(Mat4.translation(this.x + orient * this.size * (i + 1), this.y + this.size * (i + 2), this.z))
+            .times(Mat4.scale(this.size, this.size, this.length ));
+
+        }
+
+    }
+}
+
+class Bush {
+    constructor(x, y, z, width, height, length, color) {
+        this.x = x; this.y = y; this.z = z;
+        this.height = height; this.width = width; this.length = length;
+        this.color = color;
+        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(this.x, this.y, this.z))
+        .times(Mat4.scale(this.width, this.height, this.length))
+        this.collision_box.emplace(model_transform, 0, 0);
+
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({color: hex_color(this.color)}));
+    }
+}
+
 
 // This is a general player. It is used to make adding new players easy. Use local player for the player
 // that you actually control in the game.
