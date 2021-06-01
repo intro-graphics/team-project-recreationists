@@ -55,7 +55,6 @@ export class Recreationists extends Scene {
 
         this.player_matrix = Mat4.identity();
 
-
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
@@ -90,8 +89,6 @@ export class Recreationists extends Scene {
                 {ambient: .2, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
             roof: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#ff8c57"), smoothness: 60}),
-
-
         }
 
         this.game = new Game();
@@ -155,7 +152,6 @@ export class Recreationists extends Scene {
             model_transform = Mat4.identity()
             .times(Mat4.translation(x + size * (i + 1), y + size * (i + 2), z))
             .times(Mat4.scale(size, size, length ));
-
         }
     }
 
@@ -375,7 +371,6 @@ export class Recreationists extends Scene {
         G.shapes.octogon.draw(context, program_state, model_transform, this.materials.building);
         // to-do: Place octogon pyramid on top of octogons
 
-
         // to-do: Draw fountain
         // Place circle on top of grass
         model_transform = Mat4.identity().times(Mat4.translation(0,0.02,100))
@@ -387,8 +382,6 @@ export class Recreationists extends Scene {
                                          .times(Mat4.scale(30,30,1));
         G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
         //--------------------------------------------------------------------------------
-
-
 
         this.game.update(context, program_state);
         this.game.draw(context, program_state);
