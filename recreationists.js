@@ -11,6 +11,25 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+const TextureSquare =
+    class Square extends tiny.Vertex_Buffer {
+        constructor() {
+            super("position", "normal", "texture_coord");
+            this.arrays.position = [
+                vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0),
+                vec3(1, 1, 0), vec3(1, 0, 0), vec3(0, 1, 0)
+            ];
+            this.arrays.normal = [
+                vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1),
+                vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1),
+            ];
+            this.arrays.texture_coord = [
+                vec(0, 0), vec(1, 0), vec(0, 1),
+                vec(1, 1), vec(1, 0), vec(0, 1)
+            ]
+        }
+    }
+
 // used for collision detection
 class Body {
     // **Body** can store and update the properties of a 3D body that incrementally
@@ -182,6 +201,7 @@ class G {
         octogon: new defs.Capped_Cylinder(1, 8),
         pyramid: new defs.Cone_Tip(1, 4),
         cone: new defs.Cone_Tip(1, 100),
+        texture_square: new TextureSquare(),
     };
 
     static materials = {
@@ -554,9 +574,6 @@ export class Recreationists extends Scene {
         program_state.projection_transform = light_proj_mat;
         this.render(context, program_state, model_transform, false);
 
-        // update game
-        this.game.update(context, program_state);
-
         // Step 2: unbind, draw to the canvas
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -564,8 +581,11 @@ export class Recreationists extends Scene {
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.5, 500);
         this.render(context, program_state, model_transform, true);
 
+        // update game
+        this.game.update(context, program_state);
+
         // Step 3: display the textures
-        G.shapes.square.draw(context, program_state,
+        G.shapes.texture_square.draw(context, program_state,
             Mat4.translation(-.99, .08, 0).times(
                 Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
             ),
