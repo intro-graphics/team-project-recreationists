@@ -35,7 +35,7 @@ class Body {
     // **Body** can store and update the properties of a 3D body that incrementally
     // moves from its previous place due to velocities.  It conforms to the
     // approach outlined in the "Fix Your Timestep!" blog post by Glenn Fiedler.
-    constructor(shape, material, size, socket_id = "") { // socket_id is optional and only used for players
+    constructor(shape, material, size, socket_id = "default") { // socket_id is optional and only used for players
         Object.assign(this,
             {shape, material, size})
         this.socket_id = socket_id;
@@ -526,7 +526,7 @@ export class Recreationists extends Scene {
         //                        +Z: Backward (Toward the hill)
         //                        -Z: Forward  (Toward the campus)
 
-        console.log("Rendering");
+        //console.log("Rendering");
 
         program_state.draw_shadow = shadow;
 
@@ -1177,20 +1177,22 @@ class LocalPlayer extends Player {
     collision_test(new_position) {
         this.local_collision_box.emplace(new_position, 0, 0);
 
-        for (let a of G.bodies) {
+        //for (let a of G.bodies) {
             // a.inverse = Mat4.inverse(a.drawn_location);
 
             // Cache the inverse of matrix of body "a" to save time.
             //let a = this.collision_box;
-            //let a = this.local_collision_box;
+            /*
+            let a = this.local_collision_box;
             a.inverse = Mat4.inverse(a.drawn_location);
-
+            */
             // *** Collision process is here ***
             // Loop through all bodies again (call each "b"):
             for (let b of G.bodies) {
-                if (a.socket_id !== "" && a.socket_id !== "localplayer") continue;
+                //if (a.socket_id !== "" && a.socket_id !== "localplayer") continue;
                 // Pass the two bodies and the collision shape to check_if_colliding():
-                if (!a.check_if_colliding(b, G.collider))
+                b.inverse = Mat4.inverse(b.drawn_location);
+                if (!b.check_if_colliding(this.local_collision_box, G.collider))
                     continue;
                 // If we get here, we collided, so turn red and zero out the
                 // velocity so they don't inter-penetrate any further.
@@ -1198,11 +1200,11 @@ class LocalPlayer extends Player {
                 // a.material = this.active_color;
                 // a.linear_velocity = vec3(0, 0, 0);
                 // a.angular_velocity = 0;
-                console.log(a.socket_id);
+                //console.log(a.socket_id);
                 console.log("collision");
                 return true;
             }
-        }
+        //}
     }
 
     update(context, program_state) {
