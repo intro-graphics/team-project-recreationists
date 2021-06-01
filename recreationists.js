@@ -138,26 +138,44 @@ export class Recreationists extends Scene {
 
     }
 
-    draw_trash(context, program_state, x, y, z) {
+    draw_trash(context, program_state, x, y, z, isblue) {
         var model_transform = Mat4.identity()
         .times(Mat4.translation(x, y+1, z))
-        .times(Mat4.rotation(1.57, 8, 0, 0))
+        .times(Mat4.rotation(1.57, 1, 0, 0))
         .times(Mat4.scale(1, 1, 3.5));
 
         G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.trash_bin);
 
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(x, y + 2.3, z))
+        .times(Mat4.rotation(1.57, 1, 0, 0))
+        .times(Mat4.scale(1.05, 1.05, .6));
+        
+        var color = "";
+
+        if(isblue)
+            color = "#0000FF";
+        else
+            color = "#00FF00";
+
+        G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.trash_bin.override({color: hex_color(color)}));
+
     }
 
-    draw_stairs(context, program_state, x, y, z, length, num_steps, size) {
+    draw_stairs(context, program_state, x, y, z, length, num_steps, size, is_reverse) {
         var model_transform = Mat4.identity()
         .times(Mat4.translation(x, y + size, z))
         .times(Mat4.scale(size, size, length));
+
+        var orient = 1;
+        if(is_reverse)
+            orient = -1;
 
         var i;
         for (i = 0; i < num_steps; i++) {
             G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
             model_transform = Mat4.identity()
-            .times(Mat4.translation(x + size * (i + 1), y + size * (i + 2), z))
+            .times(Mat4.translation(x + orient * size * (i + 1), y + size * (i + 2), z))
             .times(Mat4.scale(size, size, length ));
 
         }
@@ -173,16 +191,17 @@ export class Recreationists extends Scene {
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(x, y + 8, z))
+        .times(Mat4.rotation(1.57, 0, 1, 0))
         .times(Mat4.scale(.1, .1, 3));
         G.shapes.cylinder.draw(context, program_state, model_transform, this.materials.lamppost);
 
         model_transform = Mat4.identity()
-        .times(Mat4.translation(x, y + 7, z + 1.2))
+        .times(Mat4.translation(x + 1.2, y + 7, z))
         .times(Mat4.scale(.5, 1, .5));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.flower_center);
 
         model_transform = Mat4.identity()
-        .times(Mat4.translation(x, y + 7, z - 1.2))
+        .times(Mat4.translation(x - 1.2, y + 7, z))
         .times(Mat4.scale(.5, 1, .5));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.flower_center);
     }
@@ -303,8 +322,8 @@ export class Recreationists extends Scene {
         //start drawing objects, first grass patch
         this.draw_lamppost(context, program_state, 78, 0, 50);
         this.draw_tree(context, program_state, 75, 0, 95);
-        this.draw_trash(context, program_state, 80, 0, 102);
-        this.draw_trash(context, program_state, 80, 0, 104.5);
+        this.draw_trash(context, program_state, 80, 0, 102, 1);
+        this.draw_trash(context, program_state, 80, 0, 104.5, 0);
         this.draw_tree(context, program_state, -70, 0 , 90);
 
         model_transform = Mat4.identity().times(Mat4.translation(-70, 0, 97))
@@ -314,7 +333,7 @@ export class Recreationists extends Scene {
         this.draw_lamppost(context, program_state, -78, 0, 50);
 
 
-        //second grass patch
+        //second grass patch objects
         this.draw_tree(context, program_state, 73, 0, -25);
         this.draw_tree(context, program_state, 76, 0, -30);
         this.draw_lamppost(context, program_state, 79, 0, -40);
@@ -330,6 +349,142 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity().times(Mat4.translation(70, 0, 103))
         .times(Mat4.scale(7, 2, 2));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+
+        this.draw_stairs(context, program_state, 102.5, 0, 0, 27.4, 6, .3, 0);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(105, 1.1, 0))
+        .times(Mat4.scale(1, 1, 27.4));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+        this.draw_stairs(context, program_state, 106.5, 2, 0, 27.4, 4, .3, 0);
+
+        //obj next to powell library, left of stairs
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(111, 0, -27))
+        .times(Mat4.scale(9, 2.7, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(114, 0, -27))
+        .times(Mat4.scale(9, 3.7, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+
+        this.draw_trash(context, program_state, 100.7, 0, -30, 1);
+        this.draw_trash(context, program_state, 100.7, 0, -32.5, 0);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(105, 0, -32))
+        .times(Mat4.scale(3, 2, 3));
+
+        var iterator = 0;
+        for(iterator = 0; iterator < 6; iterator++) {
+            G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+            model_transform = model_transform.times(Mat4.translation(.2, .2, 0));
+
+        }
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(105, 0, -60))
+        .times(Mat4.scale(5, 1, 25));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(115, 0, -60))
+        .times(Mat4.scale(5, 5, 25));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+
+
+
+        //obj next to powell library, right of stairs
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(111, 0, 27))
+        .times(Mat4.scale(9, 2.7, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs); 
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(114, 0, 27))
+        .times(Mat4.scale(9, 3.7, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+
+        this.draw_trash(context, program_state, 100.7, 0, 27, 1);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(107, 0.1, 55))
+        .times(Mat4.scale(5, .7, 26));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+
+        this.draw_tree(context, program_state, 107, 0, 55);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(112, 0, 52))
+        .times(Mat4.scale(2, 4, 23));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(105, 0, 100))
+        .times(Mat4.scale(5, 2, 5));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+        model_transform = model_transform
+        .times(Mat4.scale(2/5, 1.4, 2/5));
+        G.shapes.sphere.draw(context, program_state, model_transform, this.materials.bush);
+
+
+        //third grass patch objects 
+        this.draw_lamppost(context, program_state, 79, 0, -125);
+        this.draw_lamppost(context, program_state, -79, 0, -125);
+        this.draw_tree(context, program_state, 73, 0, -150);
+        this.draw_tree(context, program_state, -73, 0, -150);
+        this.draw_lamppost(context, program_state, 79, 0, -180);
+        this.draw_lamppost(context, program_state, -79, 0, -180);
+        this.draw_lamppost(context, program_state, 79, 0, -238);
+        this.draw_lamppost(context, program_state, -79, 0, -238);
+
+        //objects next to royce hall
+        this.draw_stairs(context, program_state, -94, 0, 0, 25, 7, .5, 1);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-95, 0, 26))
+        .times(Mat4.scale(4, 4, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-95, 0, -26))
+        .times(Mat4.scale(4, 4, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+
+        //to left of stairs
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-95, 0, 36))
+        .times(Mat4.scale(7, 5, 8.5));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+        this.draw_trash(context, program_state, -89, 0, 26, 1);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-97, 0, 63))
+        .times(Mat4.scale(1.5, 4, 16));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+
+         model_transform = Mat4.identity()
+         .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+         .times(Mat4.translation(-95, 62, -0.01))
+         .times(Mat4.scale(5, 18, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+        this.draw_tree(context, program_state, -95, 0, 90);
+
+
+        //to right of stairs
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-95, 0, -35.5))
+        .times(Mat4.scale(7, 5, 8.5));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+        this.draw_trash(context, program_state, -89, 0, -26, 0);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-97, 0, -62.5))
+        .times(Mat4.scale(1.5, 4, 17));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.bush);
+
+        model_transform = Mat4.identity()
+         .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+         .times(Mat4.translation(-95, -62.5, -0.01))
+         .times(Mat4.scale(5, 18, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
         
         
         // Draw buildings:
