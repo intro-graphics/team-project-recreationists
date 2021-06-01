@@ -2,7 +2,7 @@
  * Adapted from shadow-demo-shaders.js
  * git@github.com:Robert-Lu/tiny-graphics-shadow_demo.git
  */
-import {defs, tiny} from './common.js';
+import {defs, tiny} from './examples/common.js';
 // Pull these names into this module's scope for convenience:
 const {vec3, vec4, vec, color, Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs

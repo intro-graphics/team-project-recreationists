@@ -1,9 +1,15 @@
 import {defs, tiny} from './examples/common.js';
+import {
+    Buffered_Texture,
+    Color_Phong_Shader,
+    Depth_Texture_Shader_2D,
+    LIGHT_DEPTH_TEX_SIZE,
+    Shadow_Textured_Phong_Shader
+} from './shadow-shaders.js'
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
-
 
 // used for collision detection
 class Body {
@@ -179,35 +185,40 @@ class G {
     };
 
     static materials = {
-        player: new Material(new defs.Phong_Shader(),
+        player: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: .1, diffusivity: .9, color: hex_color("#ffffff")}),
-        bright: new Material(new defs.Phong_Shader(1), {color: color(0, 1, 0, .5), ambient: 1}),
-        tree_bark: new Material(new defs.Phong_Shader(),
+        bright: new Material(new Shadow_Textured_Phong_Shader(), {color: color(0, 1, 0, .5), ambient: 1}),
+        tree_bark: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: .6, color: hex_color("#663300"), smoothness: 60}),
-        grass: new Material(new defs.Phong_Shader(),
+        grass: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: .2, diffusivity: 0.9, color: hex_color("#2f8214"), smoothness: 60}),
-        brickGround: new Material(new defs.Phong_Shader(),
+        brickGround: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: .1, diffusivity: 1, color: hex_color("#fcc89a"), smoothness: 100}),
-        sky: new Material(new defs.Phong_Shader(),
+        sky: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 0.2, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
-        sun: new Material(new defs.Phong_Shader(),
+        sun: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: 0.5, color: hex_color("#f7c600"), smoothness: 100}),
-        whiteSquare: new Material(new defs.Phong_Shader(),
+        whiteSquare: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
 
-        flower_center: new Material(new defs.Phong_Shader(),
+        flower_center: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: .6, color: hex_color("#ffff00"), smoothness: 60}),
-        trash_bin: new Material(new defs.Phong_Shader(),
+        trash_bin: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#4d3319"), smoothness: 60}),
-        brick_stairs: new Material(new defs.Phong_Shader(),
+        brick_stairs: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#875d53"), smoothness: 60}),
-        lamppost: new Material(new defs.Phong_Shader(),
+        lamppost: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#1a1a00"), smoothness: 100}),
-        building: new Material(new defs.Phong_Shader(),
+        building: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: .2, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
-        roof: new Material(new defs.Phong_Shader(),
+        roof: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: 0.6, color: hex_color("#ff8c57"), smoothness: 60}),
 
+        depth_tex: new Material(new Depth_Texture_Shader_2D(), {
+            color: color(0, 0, .0, 1),
+            ambient: 1, diffusivity: 0, specularity: 0, texture: null
+        }),
+        pure: new Material(new Color_Phong_Shader(), {}),
     };
     // all of the data from other clients (dictionary, socketid to player info)
     static remote_data = {};
@@ -263,41 +274,44 @@ export class Recreationists extends Scene {
 
         // *** Materials
         this.materials = {
-            test: new Material(new defs.Phong_Shader(),
+            test: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             // brickGround: new Material(new Shadow_Textured_Phong(1), {
             //     ambient: 1, diffusivity: .6, color: hex_color("#fcc89a"), smoothness: 60,
             //     specularity: 0.4, color_texture: null, light_depth_texture: null
             // }),
-            // brickGround: new Material(new defs.Phong_Shader(),
+            // brickGround: new Material(new Shadow_Textured_Phong_Shader(),
             //     {ambient: .4, diffusivity: .6, color: hex_color("#fcc89a")}),
-            brickGround: new Material(new defs.Phong_Shader(),
+            brickGround: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: .1, diffusivity: 1, color: hex_color("#fcc89a"), smoothness: 100}),
             sky: new Material(new defs.Phong_Shader(),
                 {ambient: 0.2, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.5, color: hex_color("#f7c600"), smoothness: 100}),
-            whiteSquare: new Material(new defs.Phong_Shader(),
+            whiteSquare: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
-            grass: new Material(new defs.Phong_Shader(),
+            grass: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: .2, diffusivity: 0.9, color: hex_color("#2f8214"), smoothness: 60}),
-            tree_bark: new Material(new defs.Phong_Shader(),
+            tree_bark: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#663300"), smoothness: 60}),
-            flower_center: new Material(new defs.Phong_Shader(),
+            flower_center: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#ffff00"), smoothness: 60}),
-            trash_bin: new Material(new defs.Phong_Shader(),
+            trash_bin: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#4d3319"), smoothness: 60}),
-            brick_stairs: new Material(new defs.Phong_Shader(),
+            brick_stairs: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#875d53"), smoothness: 60}),
-            lamppost: new Material(new defs.Phong_Shader(),
+            lamppost: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#1a1a00"), smoothness: 100}),
-            building: new Material(new defs.Phong_Shader(),
+            building: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: .2, diffusivity: 1, color: hex_color("#fca877"), smoothness: 100}),
-            roof: new Material(new defs.Phong_Shader(),
+            roof: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#ff8c57"), smoothness: 60}),
+
+            pure: new Material(new Color_Phong_Shader(), {})
         }
 
         this.day_night_cycle = true;
+        this.shadow_init = false;
 
         this.game = new Game();
     }
@@ -390,6 +404,71 @@ export class Recreationists extends Scene {
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.flower_center);
     }
 
+    texture_buffer_init(gl) {
+        // Depth Texture
+        this.lightDepthTexture = gl.createTexture();
+        // Bind it to TinyGraphics
+        this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
+        G.materials.player.light_depth_texture = this.light_depth_texture;
+        this.materials.brickGround.light_depth_texture = this.light_depth_texture;
+
+        this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
+        gl.bindTexture(gl.TEXTURE_2D, this.lightDepthTexture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,      // target
+            0,                  // mip level
+            gl.DEPTH_COMPONENT, // internal format
+            this.lightDepthTextureSize,   // width
+            this.lightDepthTextureSize,   // height
+            0,                  // border
+            gl.DEPTH_COMPONENT, // format
+            gl.UNSIGNED_INT,    // type
+            null);              // data
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        // Depth Texture Buffer
+        this.lightDepthFramebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,       // target
+            gl.DEPTH_ATTACHMENT,  // attachment point
+            gl.TEXTURE_2D,        // texture target
+            this.lightDepthTexture,         // texture
+            0);                   // mip level
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // create a color texture of the same size as the depth texture
+        // see article why this is needed_
+        this.unusedTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.unusedTexture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            this.lightDepthTextureSize,
+            this.lightDepthTextureSize,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            null,
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // attach it to the framebuffer
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,        // target
+            gl.COLOR_ATTACHMENT0,  // attachment point
+            gl.TEXTURE_2D,         // texture target
+            this.unusedTexture,         // texture
+            0);                    // mip level
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -403,6 +482,16 @@ export class Recreationists extends Scene {
             Math.PI / 4, context.width / context.height, .1, 1000);
 
         const t = program_state.animation_time / 1000;
+
+        const gl = context.context;
+        if (!this.shadow_init) {
+            const ext = gl.getExtension("WEBGL_depth_texture");
+            if (!ext) {
+                return alert("Need WEBGL_depth_texture");
+            }
+            this.texture_buffer_init(gl);
+            this.shadow_init = true;
+        }
 
         // Draw the background
         //---------------------------------------------------
@@ -427,22 +516,16 @@ export class Recreationists extends Scene {
 
         // Place light at the sun
         const light_position = vec4(0, height, -distance, 1);
+        const light_view_target = vec4(0, 0, 0, 1)
+        const light_color = color(1, 1, 1, 1);
         program_state.lights = [
             new Light(
                 light_position,
-                color(1, 1, 1, 1),
+                light_color,
                 10 ** (radius)
             )
         ];
-
         G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sun);
-
-        // Define the directions: +Y: UP
-        //                        -Y: DOWN
-        //                        +X: RIGHT    (Toward Powell)
-        //                        -X: LEFT     (Toward Royce)
-        //                        +Z: Backward (Toward the hill)
-        //                        -Z: Forward  (Toward the campus)
 
         // Draw the sky as a giant blue sphere
         model_transform = Mat4.identity();
@@ -450,11 +533,63 @@ export class Recreationists extends Scene {
         G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sky);
         model_transform = Mat4.identity();
 
+        // Step 1: set the perspective and camera to the POV of light
+        const light_view_mat = Mat4.look_at(
+            vec3(light_position[0], light_position[1], light_position[2]),
+            vec3(light_view_target[0], light_view_target[1], light_view_target[2]),
+            vec3(1, 1, 0), // assume the light to target will have a up dir of +y, maybe need to change according
+            // to your case
+        );
+        const light_field_of_view = 130 * Math.PI / 180;
+        const light_proj_mat = Mat4.perspective(light_field_of_view, 1, 0.5, 500);
+        // Bind the Depth Texture Buffer
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
+        gl.viewport(0, 0, this.lightDepthTextureSize, this.lightDepthTextureSize);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // Prepare uniforms
+        program_state.light_view_mat = light_view_mat;
+        program_state.light_proj_mat = light_proj_mat;
+        program_state.light_tex_mat = light_proj_mat;
+        program_state.view_mat = light_view_mat;
+        program_state.projection_transform = light_proj_mat;
+        this.render(context, program_state, model_transform, false);
+
+        // update game
+        this.game.update(context, program_state);
+
+        // Step 2: unbind, draw to the canvas
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        program_state.view_mat = program_state.camera_inverse;
+        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.5, 500);
+        this.render(context, program_state, model_transform, true);
+
+        // Step 3: display the textures
+        G.shapes.square.draw(context, program_state,
+            Mat4.translation(-.99, .08, 0).times(
+                Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
+            ),
+            G.materials.depth_tex.override({texture: this.lightDepthTexture})
+        );
+    }
+
+    render(context, program_state, model_transform, shadow) {
+        // Define the directions: +Y: UP
+        //                        -Y: DOWN
+        //                        +X: RIGHT    (Toward Powell)
+        //                        -X: LEFT     (Toward Royce)
+        //                        +Z: Backward (Toward the hill)
+        //                        -Z: Forward  (Toward the campus)
+
+        console.log("Rendering");
+
+        program_state.draw_shadow = shadow;
+
         // Draw the ground
         model_transform = model_transform
             .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(1000, 1000, 1))
-        G.shapes.square.draw(context, program_state, model_transform, this.materials.brickGround);
+        G.shapes.square.draw(context, program_state, model_transform, shadow ? this.materials.brickGround : this.materials.pure);
 
         model_transform = Mat4.identity();
 
@@ -597,8 +732,7 @@ export class Recreationists extends Scene {
         G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
         //--------------------------------------------------------------------------------
 
-        this.game.update(context, program_state);
-        this.game.draw(context, program_state);
+        this.game.draw(context, program_state, shadow);
     }
 }
 
@@ -667,11 +801,11 @@ class Game {
         }
     }
 
-    draw(context, program_state) {
-        this.entities.map(x => x.draw(context, program_state));
+    draw(context, program_state, shadow) {
+        this.entities.map(x => x.draw(context, program_state, shadow));
         for (let i in G.remote_players) {
             if (G.remote_players[i] !== false) {
-                G.remote_players[i].draw(context, program_state);
+                G.remote_players[i].draw(context, program_state, shadow);
             }
         }
 
@@ -693,7 +827,7 @@ class Royce {
 
     }
 
-    draw(context, program_state) {
+    draw(context, program_state, shadow) {
         // Collision around whole thing
         let model_transform = Mat4.identity().times(Mat4.translation(-130, 0, 0))
             .times(Mat4.scale(30, 35, 80));
@@ -744,7 +878,7 @@ class Tree {
 
     }
 
-    draw(context, program_state) {
+    draw(context, program_state, shadow) {
         let x = this.x;
         let y = this.y;
         let z = this.z;
@@ -783,9 +917,9 @@ class Player {
         }
     }
 
-    draw(context, program_state) {
+    draw(context, program_state, shadow) {
         if (!G.hide_other_players) {
-            G.shapes.cube.draw(context, program_state, this.player_matrix, G.materials.player);
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player : G.materials.pure);
         }
     }
 }
@@ -956,9 +1090,9 @@ class LocalPlayer extends Player {
         })
     }
 
-    draw(context, program_state) {
+    draw(context, program_state, shadow) {
         if (!G.hide_my_player) {
-            G.shapes.cube.draw(context, program_state, this.player_matrix, G.materials.player);
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player : G.materials.pure);
         }
     }
 }
