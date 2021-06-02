@@ -681,10 +681,41 @@ export class Recreationists extends Scene {
 
         // to-do: Draw fountain
         // Place circle on top of grass
-        model_transform = Mat4.identity().times(Mat4.translation(0, 0.02, 100))
-            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(20, 20, 1));
-        G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
+
+/*
+        var i;
+        for (i = .1; i < 6.28; i = i + .4) {
+            model_transform = Mat4.identity()
+            .times(Mat4.translation(0, 0, 100))
+            .times(Mat4.rotation(i + 1.57, 0, 1, 0))
+            .times(Mat4.translation(0, 0, 20))
+            .times(Mat4.scale(4, 2, 1));
+
+            G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+        }        
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(0, 1.8, 100))
+        .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+        .times(Mat4.scale(19, 19, 1));
+        G.shapes.circle.draw(context, program_state, model_transform, this.materials.whiteSquare.override({color: hex_color("#00006F")}));
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(40, 0, 100))
+        .times(Mat4.scale(20, 2, 3));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-40, 0, 100))
+        .times(Mat4.scale(20, 2, 3));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(0, 5, 100))
+        .times(Mat4.scale(.8, 5, .8));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.whiteSquare.override({color: hex_color("#0000FF")}));
+*/
+        //Other end
         model_transform = Mat4.identity().times(Mat4.translation(0, 0.02, -240))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(30, 30, 1));
@@ -784,7 +815,9 @@ class Game {
         this.entities.push(new Bush(-93, 0, -215, 1, 2.5, 25, "#00FF00"));
 
         //Fountain
-
+        this.entities.push(new Fountain());
+        this.entities.push(new Bush(40, 0, 100, 20, 2, 3, "#975d53"));
+        this.entities.push(new Bush(-40, 0, 100, 20, 2, 3, "#975d53"));
 
         this.entities.push(new Royce()); // Bella's Royce Hall
 
@@ -1095,6 +1128,43 @@ class Bush {
     }
 }
 
+class Fountain {
+    constructor() {
+        this.collision_box = G.register.register(vec3(0, 0, 0));
+    }
+
+    update(context, program_state) {   
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(0, 0, 100))
+        .times(Mat4.scale(18, 2, 18));
+        this.collision_box.emplace(model_transform, 0, 0);
+
+        var i;
+        for (i = .1; i < 6.28; i = i + .4) {
+            model_transform = Mat4.identity()
+            .times(Mat4.translation(0, 0, 100))
+            .times(Mat4.rotation(i + 1.57, 0, 1, 0))
+            .times(Mat4.translation(0, 0, 20))
+            .times(Mat4.scale(4, 2, 1));
+
+            G.shapes.cube.draw(context, program_state, model_transform, G.materials.brick_stairs);
+        }        
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(0, 1.8, 100))
+        .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+        .times(Mat4.scale(19, 19, 1));
+        G.shapes.circle.draw(context, program_state, model_transform, G.materials.whiteSquare.override({color: hex_color("#00006F")}));
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(0, 5, 100))
+        .times(Mat4.scale(.8, 5, .8));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.whiteSquare.override({color: hex_color("#0000FF")}));
+    }
+}
 
 // This is a general player. It is used to make adding new players easy. Use local player for the player
 // that you actually control in the game.
