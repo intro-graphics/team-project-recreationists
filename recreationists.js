@@ -712,31 +712,29 @@ class Game {
         this.entities.push(new Tree(115, 0, 75));
         this.entities.push(new Bush(113, 0, 79, 5, 3, 2, "#00FF00"));
         this.entities.push(new Stairs(102.5, 0, 0, 27.4, 6, .3, 0));
-            //this.entities.push(new Bush(105, 1.1, 0, 1, 1, 27.4, "#875d53"));
+        this.entities.push(new Bush(105, 1.1, 0, 1, 1, 27.4, "#875d53"));
         this.entities.push(new Stairs(106.5, 2, 0, 27.4, 4, .3, 0));
 
         //objects next to powell library, left of stairs
         this.entities.push(new Bush(111, 0, -27, 9, 2.7, 1, "#875d53"));
-            //this.entities.push(new Bush(114, 0, -27, 9, 3.7, 1, "#875d53"));
+        this.entities.push(new Bush(114, 0, -27, 9, 3.7, 1, "#875d53"));
         this.entities.push(new Trash(100.7, 0, -30, 1));
         this.entities.push(new Trash(100.7, 0, -32.5, 0));
 
         this.entities.push(new Bush(105, 0, -32, 3, 2, 3, "#00FF00"));
-        /*
         this.entities.push(new Bush(105.6, 0.4, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(106.2, 0.8, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(106.8, 1.2, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(107.4, 1.6, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(108, 2, -32, 3, 2, 3, "#00FF00"));
-        */
-            //this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214")); 
+        this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214")); 
         this.entities.push(new Bush(115, 0, -60, 5, 5, 25, "#00FF00"));
 
         //objects next to powell library, right of stairs
         this.entities.push(new Bush(111, 0, 27, 9, 2.7, 1, "#875d53")); //brick stairs
-            //this.entities.push(new Bush(114, 0, 27, 9, 3.7, 1, "#875d53"));
-            //this.entities.push(new Trash(100.7, 0, 27, 1));
-            //this.entities.push(new Bush(107, .1, 55, 5, .7, 26, "#2f8214"));
+        this.entities.push(new Bush(114, 0, 27, 9, 3.7, 1, "#875d53"));
+        this.entities.push(new Trash(100.7, 0, 27, 1));
+        this.entities.push(new Bush(107, .1, 55, 5, .7, 26, "#2f8214"));
         this.entities.push(new Tree(107, 0, 55));
         this.entities.push(new Bush(112, 0, 52, 2, 4, 23, "#00FF00"));
         this.entities.push(new Bush(105, 0, 100, 5, 2, 5, "#2f8214"));
@@ -933,21 +931,13 @@ class Trash {
 
 class Lamppost {
     constructor(x, y, z) {
-        this.x = x; this.y = y; this.z = z;
-        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
-
-    }
+        this.x = x; this.y = y; this.z = z;    }
 
     update(context, program_state) {
     }
 
     draw(context, program_state, shadow) {
         let model_transform = Mat4.identity()
-        .times(Mat4.translation(this.x, this.y+3, this.z))
-        .times(Mat4.scale(.1, 5, .1));
-        this.collision_box.emplace(model_transform, 0, 0);
-
-        model_transform = Mat4.identity()
         .times(Mat4.translation(this.x, this.y + 3, this.z))
         .times(Mat4.scale(.1, 10, .1))
         .times(Mat4.rotation(Math.PI/2, 1, 0, 0));
@@ -975,7 +965,6 @@ class Flower {
     constructor(x, y, z, color) {
         this.x = x; this.y = y+.5; this.z = z;
         this.color = color;
-        this.collision_box = G.register.register(vec3(this.x, this.y, this.z));
     }
 
     update(context, program_state) {
@@ -983,10 +972,6 @@ class Flower {
 
     draw(context, program_state, shadow) {
         let model_transform = Mat4.identity()
-        .times(Mat4.translation(this.x, this.y, this.z))
-        .times(Mat4.scale(.4, 1.5, .1));
-        this.collision_box.emplace(model_transform, 0, 0);
-        model_transform = Mat4.identity()
         .times(Mat4.translation(this.x, this.y, this.z))
         .times(Mat4.scale(.1, .6, .1));
         G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass);
