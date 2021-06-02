@@ -555,6 +555,29 @@ export class Recreationists extends Scene {
         G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
 
 
+
+        //simple objects without collision boxes
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(105, 0, -60))
+        .times(Mat4.scale(5, 1, 25));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(107, 0.1, 55))
+        .times(Mat4.scale(5, .7, 26));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-95, 0, 62))
+        .times(Mat4.scale(5, 1, 19));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-95, 0, -62.5))
+        .times(Mat4.scale(5, 1, 18));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
+
+
         // Draw buildings:
         // 1) Draw simple building
         // Box
@@ -565,6 +588,7 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity().times(Mat4.translation(-125, 40, -180))
             .times(Mat4.scale(25, 10, 119.8));
         G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+
 
         // 2) Draw Royce
         // // Rear Box
@@ -708,6 +732,7 @@ class Game {
         this.entities.push(new Lamppost(79, 0, -238));
         this.entities.push(new Lamppost(-79, 0, -238));
 
+
         //objects next to powell library
         this.entities.push(new Tree(115, 0, 75));
         this.entities.push(new Bush(113, 0, 79, 5, 3, 2, "#00FF00"));
@@ -722,28 +747,44 @@ class Game {
         this.entities.push(new Trash(100.7, 0, -32.5, 0));
 
         this.entities.push(new Bush(105, 0, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(105.6, 0.4, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(106.2, 0.8, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(106.8, 1.2, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(107.4, 1.6, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(108, 2, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214")); 
-        this.entities.push(new Bush(115, 0, -60, 5, 5, 25, "#00FF00"));
+        this.entities.push(new Bush(108, 2.5, -32, 3, 2, 3, "#00FF00")); 
+        this.entities.push(new Bush(115, 0, -55, 5, 5, 30, "#00FF00"));
 
         //objects next to powell library, right of stairs
         this.entities.push(new Bush(111, 0, 27, 9, 2.7, 1, "#875d53")); //brick stairs
         this.entities.push(new Bush(114, 0, 27, 9, 3.7, 1, "#875d53"));
         this.entities.push(new Trash(100.7, 0, 27, 1));
-        this.entities.push(new Bush(107, .1, 55, 5, .7, 26, "#2f8214"));
         this.entities.push(new Tree(107, 0, 55));
         this.entities.push(new Bush(112, 0, 52, 2, 4, 23, "#00FF00"));
         this.entities.push(new Bush(105, 0, 100, 5, 2, 5, "#2f8214"));
 
 
-        //test
-        //this.entities.push(new Bush(0, 3, 0, 5, 2, 7, "#00FF00"))
-        //this.entities.push(new Stairs(0, 0, 0, 5, 5, .25, 0));
-        //this.entities.push(new Flower(0, 0, 0, "#FF0000"));
+        //objects next to Royce Hall
+        this.entities.push(new Stairs(-94, 0, 0, 25, 7, .5, 1));
+        this.entities.push(new Bush(-95, 0, 26, 4, 4, 1, "#875d53"));
+        this.entities.push(new Bush(-95, 0, -26, 4, 4, 1, "#875d53"));
+
+        //objects next to Royce Hall, left of stairs
+        this.entities.push(new Bush(-95, 0, 36, 7, 5, 8.5, "#00FF00"));
+        this.entities.push(new Bush(-97, 0, 63, 1.5, 4, 16, "#00FF00"));
+        this.entities.push(new Tree(-95, 0, 90));
+
+        //objects next to Royce Hall, right of stairs
+        this.entities.push(new Bush(-95, 0, -35.5, 7, 5, 8.5, "#00FF00"));
+        this.entities.push(new Bush(-97, 0, -62.5, 1.5, 4, 17, "#00FF00"));
+        
+
+        //objects next to Haines Hall
+        this.entities.push(new Bush(-97, 0, -180, 3, 2, 60, "#975d53"));
+        this.entities.push(new Bush(-97, 3, -140, 3, 1, 20, "#00FF00"));
+        this.entities.push(new Bush(-97, 3, -220, 3, 1, 20, "00FF00"));
+        this.entities.push(new Stairs(-92, 0, -180, 10, 10, .2, 1));
+        this.entities.push(new Stairs(-98, 2, -180, 10, 5, .3, 1));
+        this.entities.push(new Bush(-93, 0, -145, 1, 2.5, 25, "#00FF00"));
+        this.entities.push(new Bush(-93, 0, -215, 1, 2.5, 25, "#00FF00"));
+
+        //Fountain
+
 
         this.entities.push(new Royce()); // Bella's Royce Hall
 
