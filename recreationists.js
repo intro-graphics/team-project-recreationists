@@ -1485,6 +1485,13 @@ class Player {
         this.socket_id = socket_id;
         this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
+        this.rocking_angle=0;
+        this.rocking_angle2=0;
+        this.rocking_angle3=0;//Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
+        // 4 random colors for upper body, head, arms, and legs
+        this.colorArray = [];
+        for (var j=0;j<4;j++)
+            this.colorArray[j]=color(Math.random(), Math.random(), Math.random(), 1.0);
     }
 
     update(context, program_state) {
@@ -1512,7 +1519,92 @@ class Player {
     draw(context, program_state, shadow) {
         if (!G.hide_other_players) {
             
-            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player : G.materials.pure);
+            //G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player : G.materials.pure);
+             // The  player_matrix coordinates origin (0,0,0) will represent the bottom-middle of the upper body
+            // First draw the upper body as a 1.2x1.5x0.6 rectangle centered at (0, 0.75, 0)
+            // Upper Body:
+            
+            this.player_matrix=this.player_matrix.times(Mat4.translation(0,0.75,0))
+                                                 .times(Mat4.scale(0.6,0.75,0.3));
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[0]}) : G.materials.pure.override({color:this.colorArray[0]}));
+            this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.6,1/0.75,1/0.3))
+                                                 .times(Mat4.translation(0,-0.75,0));
+            
+            // Define angles for rocking the legs and arms 
+            //let rocking_angle3=Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
+            //let rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*program_state.animation_time/1000);
+
+            // Now draw the two legs as two rectangles underneath the body
+            // Centered at (-0.3,-0.5,0) and (0.3, 0.5, 0)
+            // Both of dimensions 0.4x1.0x0.4
+            // Leg 1:
+            this.player_matrix=this.player_matrix.times(Mat4.translation(-0.3,-0.5,0))
+                                                 .times(Mat4.translation(0,0.5,0))
+                                                 .times(Mat4.rotation(this.rocking_angle,1,0,0))
+                                                 .times(Mat4.translation(0,-0.5,0))
+                                                 .times(Mat4.scale(0.2,0.5,0.2));
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[1]}) : G.materials.pure.override({color:this.colorArray[1]}));
+            this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.2,1/0.5,1/0.2))
+                                                 .times(Mat4.translation(0,0.5,0))
+                                                 .times(Mat4.rotation(-this.rocking_angle,1,0,0))
+                                                 .times(Mat4.translation(0,-0.5,0))
+                                                 .times(Mat4.translation(0.3,0.5,0));
+            
+            // Leg 2:
+            this.player_matrix=this.player_matrix.times(Mat4.translation(0.3,-0.5,0))
+                                                 .times(Mat4.translation(0,0.5,0))
+                                                 .times(Mat4.rotation(this.rocking_angle2,1,0,0))
+                                                 .times(Mat4.translation(0,-0.5,0))
+                                                 .times(Mat4.scale(0.2,0.5,0.2));
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[1]}) : G.materials.pure.override({color:this.colorArray[1]}));
+            this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.2,1/0.5,1/0.2))
+                                                 .times(Mat4.translation(0,0.5,0))
+                                                 .times(Mat4.rotation(-this.rocking_angle2,1,0,0))
+                                                 .times(Mat4.translation(0,-0.5,0))
+                                                 .times(Mat4.translation(-0.3,0.5,0));
+            
+            // Now draw two arms as two rotated rectangles on either side of the body
+            // Both of dimensions 0.4x1.5x0.4
+            // Both rotated about the shoulders (0.6, 1.5, 0) and (-0.6, 1.5, 0) by an angle theta (z-axis rotation)
+            // Arm 1:
+            let theta=Math.PI/12;
+            
+            this.player_matrix=this.player_matrix.times(Mat4.translation(0.6,1.5,0))
+                                                 .times(Mat4.rotation(theta,0,0,1))
+                                                 .times(Mat4.rotation(this.rocking_angle,1,0,0))
+                                                 .times(Mat4.scale(0.2,0.75,0.2))
+                                                 .times(Mat4.translation(1,-1,0));
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[2]}) : G.materials.pure.override({color:this.colorArray[2]}));
+            this.player_matrix=this.player_matrix.times(Mat4.translation(-1,1,0))
+                                                 .times(Mat4.scale(1/0.2,1/0.75,1/0.2))
+                                                 .times(Mat4.rotation(-this.rocking_angle,1,0,0))
+                                                 .times(Mat4.rotation(-theta,0,0,1))
+                                                 .times(Mat4.translation(-0.6,-1.5,0));
+            
+            // Arm 2:
+            this.player_matrix=this.player_matrix.times(Mat4.translation(-0.6,1.5,0))
+                                                 .times(Mat4.rotation(-theta,0,0,1))
+                                                 .times(Mat4.rotation(this.rocking_angle2,1,0,0))
+                                                 .times(Mat4.scale(0.2,0.75,0.2))
+                                                 .times(Mat4.translation(-1,-1,0));
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[2]}) : G.materials.pure.override({color:this.colorArray[2]}));
+            this.player_matrix=this.player_matrix.times(Mat4.translation(1,1,0))
+                                                 .times(Mat4.scale(1/0.2,1/0.75,1/0.2))
+                                                 .times(Mat4.rotation(-this.rocking_angle2,1,0,0))
+                                                 .times(Mat4.rotation(theta,0,0,1))
+                                                 .times(Mat4.translation(0.6,-1.5,0));
+            
+            // Draw head as one cube on top of the upper body centered at (0, 1.5 + 0.5, 0)
+            // Dimensions are 1.0x1.0x1.0
+            // Head:
+            this.player_matrix=this.player_matrix.times(Mat4.translation(0,2,0))
+                                                 .times(Mat4.translation(this.rocking_angle3*0.25,0,0))
+                                                 .times(Mat4.scale(0.5,0.5,0.5));
+            G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[3]}) : G.materials.pure.override({color:this.colorArray[3]}));
+            this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.5,1/0.5,1/0.5))
+                                                 .times(Mat4.translation(-this.rocking_angle3*0.25,0,0))
+                                                 .times(Mat4.translation(0,-2,0));
+
             
         }
     }
@@ -1543,14 +1635,16 @@ class LocalPlayer extends Player {
         //this.local_collision_box = G.register.register(vec3(0, 0, 0), "localplayer");
 
         // 4 random colors for upper body, head, arms, and legs
+        /* Already created in the player parent class
         this.colorArray = [];
         for (var j=0;j<4;j++)
             this.colorArray[j]=color(Math.random(), Math.random(), Math.random(), 1.0);
+            */
        
        this.rocking_time=0;
        this.playerMoved=false;
-       this.rocking_angle=0;
-       this.rocking_angle2=0;
+       //this.rocking_angle=0; // already defined in parent player class
+       //this.rocking_angle2=0;// already defined in parent player class
        this.flip_angle=0;
     }
 
