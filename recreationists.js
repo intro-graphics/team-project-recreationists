@@ -186,6 +186,88 @@ class Register {
     }
 }
 
+class Cube_Outline extends Shape {
+    constructor() {
+        super("position", "color");
+        //  TODO (Requirement 5).
+        // When a set of lines is used in graphics, you should think of the list entries as
+        // broken down into pairs; each pair of vertices will be drawn as a line segment.
+        // Note: since the outline is rendered with Basic_shader, you need to redefine the position and color of each vertex
+        this.arrays.position = Vector3.cast(
+            [ 1,-1, 1], [ 1,-1,-1],
+            [ 1,-1,-1], [-1,-1,-1],
+            [-1,-1,-1], [-1,-1, 1],
+            [-1,-1, 1], [ 1,-1, 1],
+            [ 1,-1, 1], [ 1, 1, 1],
+            [ 1,-1,-1], [ 1, 1,-1],
+            [-1,-1,-1], [-1, 1,-1],
+            [-1,-1, 1], [-1, 1, 1],
+            [ 1, 1, 1], [ 1, 1,-1],
+            [ 1, 1,-1], [-1, 1,-1],
+            [-1, 1,-1], [-1, 1, 1],
+            [-1, 1, 1], [ 1, 1, 1],
+        );
+        let white = color(1.0, 1.0, 1.0, 1.0);
+        this.arrays.color = [
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+            white, white,
+        ];
+        this.indices = false;
+    }
+}
+
+    // had to add this class to fix colision bug
+class Square extends Shape {
+    // **Square** demonstrates two triangles that share vertices.  On any planar surface, the
+    // interior edges don't make any important seams.  In these cases there's no reason not
+    // to re-use data of the common vertices between triangles.  This makes all the vertex
+    // arrays (position, normals, etc) smaller and more cache friendly.
+    constructor() {
+        super("position", "normal", "texture_coord");
+        // Specify the 4 square corner locations, and match those up with normal vectors:
+        //this.arrays.position = Vector3.cast([-1, -1, 0], [1, -1, 0], [-1, 1, 0], [1, 1, 0]);
+        this.arrays.position = Vector3.cast([-1, -1, 0], [1, -1, 0], [-1, 1, 0], [1, 1, 0], [0, 0, 0]);
+
+        //this.arrays.normal = Vector3.cast([0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1]);
+        this.arrays.normal = Vector3.cast([0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1]);
+
+        // Arrange the vertices into a square shape in texture space too:
+        //this.arrays.texture_coord = Vector.cast([0, 0], [1, 0], [0, 1], [1, 1]);
+        this.arrays.texture_coord = Vector.cast([0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]);
+
+        // Use two triangles this time, indexing into four distinct vertices:
+        this.indices.push(0, 1, 2, 1, 3, 2, 4);
+    }
+}
+    // had to add this class to fix colision bug
+class Cube extends Shape {
+    // **Cube** A closed 3D shape, and the first example of a compound shape (a Shape constructed
+    // out of other Shapes).  A cube inserts six Square strips into its own arrays, using six
+    // different matrices as offsets for each square.
+    constructor() {
+        super("position", "normal", "texture_coord");
+        // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 2; j++) {
+                const square_transform = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+                    .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
+                    .times(Mat4.translation(0, 0, 1));
+                // Calling this function of a Square (or any Shape) copies it into the specified
+                // Shape (this one) at the specified matrix offset (square_transform):
+                Square.insert_transformed_copy_into(this, [], square_transform);
+            }
+    }
+}
 
 // class G global used for accessing items that are shared between classes
 class G {
@@ -275,7 +357,10 @@ class G {
     static key_was_pressed = false;
 
     // the collision box we are using
-    static collider = {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1};
+    //static collider = {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1};
+    // fixes collision bug
+    static collider = {intersect_test: Body.intersect_cube, points: new Cube(), leeway: .1};
+
 
     // bodies that are used in collision
     static bodies = [];
@@ -343,9 +428,10 @@ export class Recreationists extends Scene {
             pure: new Material(new Color_Phong_Shader(), {})
         }
 
-        this.day_night_cycle = true;
+        this.day_night_cycle = false;
         this.shadow_init = false;
-        this.shadow_demo = true;
+        this.shadow_demo = false;
+        //this.light_turned_on = true; // overrides all the light (testing if performance can be better)
 
         this.game = new Game();
     }
@@ -449,6 +535,10 @@ export class Recreationists extends Scene {
         const t = program_state.animation_time / 1000;
         const dt = program_state.animation_delta_time / 1000;
 
+        let model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.translation(0, 0, 0));
+
+        //if (this.light_turned_on) {
         const gl = context.context;
         if (!this.shadow_init) {
             console.log("Initializing shadows...");
@@ -460,7 +550,7 @@ export class Recreationists extends Scene {
             console.log("Shadows initialized");
             this.shadow_init = true;
         }
-
+        
         // Draw the background
         //---------------------------------------------------
 
@@ -497,9 +587,9 @@ export class Recreationists extends Scene {
             )
         ];
 
+        //if (this.shadow_demo) {
         // Set coordinate system matrix at the origin
-        let model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.translation(0, 0, 0));
+        
 
         // Step 1: set the perspective and camera to the POV of light
         const light_view_mat = Mat4.look_at(
@@ -540,6 +630,11 @@ export class Recreationists extends Scene {
                 G.materials.depth_tex.override({texture: this.lightDepthTexture})
             );
         }
+        //}
+        //} // end of this.light_turned_on
+        //else {
+          //  this.render(context, program_state, model_transform, false);
+        //}
     }
 
     render(context, program_state, model_transform, shadow) {
@@ -563,6 +658,7 @@ export class Recreationists extends Scene {
                 this.materials.sun);
         }
 
+        /*
         // Draw the sky as a giant blue sphere
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.scale(200, 200, 200));
@@ -570,7 +666,7 @@ export class Recreationists extends Scene {
             G.shapes.sphere.draw(context, program_state, model_transform, shadow ? this.materials.sky : G.materials.pure);
         }
         model_transform = Mat4.identity();
-
+        */
         // Draw the ground
         model_transform = model_transform
             .times(Mat4.translation(0, -.1, 0))
@@ -940,6 +1036,8 @@ class Game {
         if (G.show_collision_boxes) {
             for (let b of G.bodies)
                 points.draw(context, program_state, b.drawn_location.times(Mat4.scale(...size)), G.materials.bright, "LINE_STRIP");
+                //points.draw(context, program_state, b.drawn_location.times(Mat4.scale(...size)));
+
         }
     }
 }
@@ -1379,14 +1477,21 @@ class Fountain {
 // that you actually control in the game.
 class Player {
     constructor(socket_id) {
-        this.player_matrix = Mat4.identity().times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 40 - 20));
+        this.player_matrix =Mat4.identity()
+                                            //.times(Mat4.scale(1, 2, 1))
+                                            .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 40 - 20))
+                                            //.times(Mat4.scale(1, 2, 1))
+                                            ;
         this.socket_id = socket_id;
-        this.collision_box = G.register.register(vec3(0, -10, 0), socket_id);
+        this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
     }
 
     update(context, program_state) {
-        this.collision_box.emplace(this.player_matrix, 0, 0);
+        let player_box = this.player_matrix   .times(Mat4.translation(0, 0.6, 0))
+                                        .times(Mat4.scale(1, 1.7, 1));
+        //let player_box = this.player_matrix.times(Mat4.scale(1, 2, 1));
+        this.collision_box.emplace(player_box, 0, 0);
 
         // assume this is a remote player
         if (this.socket_id !== G.player_id) {
@@ -1422,7 +1527,7 @@ class LocalPlayer extends Player {
         this.acceleration = new Vector([0, 0, 0]);
         this.velocity = new Vector([0, 0, 0]);
         this.jumping = false;
-        this.speed = 0.25;
+        this.speed = 0.1;
         this.rotation_speed = 0.01;
         this.jumptime=0;
         // this.collisions = {
@@ -1433,9 +1538,9 @@ class LocalPlayer extends Player {
         //     d: false, // down
         //     u: false // up
         // };
-        this.collision_matrix = this.player_matrix;
+        this.collision_matrix = this.player_matrix;//this.player_matrix.times(Mat4.scale(1, 2, 1));
 
-        this.local_collision_box = G.register.register(vec3(0, 0, 0), "localplayer");
+        //this.local_collision_box = G.register.register(vec3(0, 0, 0), "localplayer");
 
         // 4 random colors for upper body, head, arms, and legs
         this.colorArray = [];
@@ -1497,7 +1602,7 @@ class LocalPlayer extends Player {
                 this.jumping = true;
                 //this.player_matrix = this.player_matrix.times(Mat4.translation(0,1,0));
                 //console.log("m pressed");
-                this.apply_force([0, 9.8 * 0.05, 0]);
+                this.apply_force([0, 9.8 * 0.04, 0]);
             }
         }
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
@@ -1506,7 +1611,10 @@ class LocalPlayer extends Player {
 
     // test if problem in new position
     collision_test(new_position) {
-        this.local_collision_box.emplace(new_position, 0, 0);
+        //this.local_collision_box.emplace(new_position, 0, 0);
+        let player_box = new_position   .times(Mat4.translation(0, 0.6, 0))
+                                        .times(Mat4.scale(1, 1.7, 1));
+        this.collision_box.emplace(player_box, 0, 0);
 
         //for (let a of G.bodies) {
             // a.inverse = Mat4.inverse(a.drawn_location);
@@ -1519,11 +1627,12 @@ class LocalPlayer extends Player {
             */
             // *** Collision process is here ***
             // Loop through all bodies again (call each "b"):
+            //return false;
             for (let b of G.bodies) {
                 //if (a.socket_id !== "" && a.socket_id !== "localplayer") continue;
                 // Pass the two bodies and the collision shape to check_if_colliding():
                 b.inverse = Mat4.inverse(b.drawn_location);
-                if (!b.check_if_colliding(this.local_collision_box, G.collider))
+                if (!b.check_if_colliding(this.collision_box, G.collider))
                     continue;
                 // If we get here, we collided, so turn red and zero out the
                 // velocity so they don't inter-penetrate any further.
@@ -1546,7 +1655,7 @@ class LocalPlayer extends Player {
         //         //.times(Mat4.rotation(Math.PI/4,0,0,0))
         //     );
         // }
-        
+        //
         if (this.playerMoved || this.jumping)
         {
             this.rocking_time+=program_state.animation_delta_time/1000;
@@ -1586,7 +1695,7 @@ class LocalPlayer extends Player {
         this.collision_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], this.velocity[2]));
 
         if (this.collision_test(this.collision_matrix)) {
-            this.velocity = vec3(0, 0, 0);
+            this.velocity = vec3(0, this.velocity[1], 0);
         }
 
         this.player_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], this.velocity[2])); //this.velocity.z));
