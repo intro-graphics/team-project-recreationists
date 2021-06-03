@@ -205,8 +205,14 @@ class G {
     };
 
     static materials = {
-        player: new Material(new Shadow_Textured_Phong_Shader(),
-            {ambient: .1, diffusivity: .9, color: hex_color("#ffffff")}),
+        player: new Material(new Shadow_Textured_Phong_Shader(1),
+            {
+                ambient: .1,
+                diffusivity: .9,
+                color: hex_color("#ffffff"),
+                color_texture: null,
+                light_depth_texture: null
+            }),
         bright: new Material(new Shadow_Textured_Phong_Shader(), {color: color(0, 1, 0, .5), ambient: 1}),
         tree_bark: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: .6, color: hex_color("#663300"), smoothness: 60}),
@@ -302,8 +308,15 @@ export class Recreationists extends Scene {
             // }),
             // brickGround: new Material(new Shadow_Textured_Phong_Shader(),
             //     {ambient: .4, diffusivity: .6, color: hex_color("#fcc89a")}),
-            brickGround: new Material(new Shadow_Textured_Phong_Shader(),
-                {ambient: .1, diffusivity: 1, color: hex_color("#fcc89a"), smoothness: 100}),
+            brickGround: new Material(new Shadow_Textured_Phong_Shader(1),
+                {
+                    ambient: .1,
+                    diffusivity: 1,
+                    color: hex_color("#fcc89a"),
+                    smoothness: 100,
+                    color_texture: null,
+                    light_depth_texture: null
+                }),
             sky: new Material(new defs.Phong_Shader(),
                 {ambient: 0.2, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
             sun: new Material(new defs.Phong_Shader(),
@@ -332,6 +345,7 @@ export class Recreationists extends Scene {
 
         this.day_night_cycle = true;
         this.shadow_init = false;
+        this.shadow_demo = true;
 
         this.game = new Game();
     }
@@ -347,6 +361,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Hide other players", ["Shift", "Y"], () => G.hide_other_players = !G.hide_other_players);
         this.key_triggered_button("Hide my player", ["Shift", "U"], () => G.hide_my_player = !G.hide_my_player);
         this.key_triggered_button("Toggle day-night cycle", ["Shift", "P"], () => this.day_night_cycle = !this.day_night_cycle);
+        this.key_triggered_button("Toggle shadow", ["Shift", "O"], () => this.shadow_demo = !this.shadow_demo)
     }
 
     texture_buffer_init(gl) {
@@ -423,67 +438,63 @@ export class Recreationists extends Scene {
         //     //program_state.set_camera(this.camera_matrix);
         // }
 
-        program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
-
         const t = program_state.animation_time / 1000;
 
         const gl = context.context;
         if (!this.shadow_init) {
+            console.log("Initializing shadows...");
             const ext = gl.getExtension("WEBGL_depth_texture");
             if (!ext) {
                 return alert("Need WEBGL_depth_texture");
             }
             this.texture_buffer_init(gl);
+            console.log("Shadows initialized");
             this.shadow_init = true;
         }
 
         // Draw the background
         //---------------------------------------------------
 
-        // Set coordinate system matrix at the origin
-        let model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.translation(0, 0, 0));
-
-        // Draw the sun
+        // Place light at the sun
         const day_time = 10; // seconds that day time should last (12 hours in real life)
         let day_cycle = 0;
         if (this.day_night_cycle) {
             day_cycle = Math.PI * t / day_time;
         }
-        let sun_dist = 5000; // distance from sun to origin (as it revolves)
+        // day_cycle = 0;
+        let sun_dist = 50; // distance from sun to origin (as it revolves)
+        if (this.shadow_demo) {
+            sun_dist = 20;
+        }
         let distance = Math.sin(day_cycle) * sun_dist;
         let height = Math.cos(day_cycle) * sun_dist;
         let radius = 10; // radius of sun
-        model_transform = model_transform.times(Mat4.translation(0, height, 0))
-            .times(Mat4.translation(0, 0, -distance))
-            .times(Mat4.scale(radius, radius, radius));
-
-        // Place light at the sun
-        const light_position = vec4(0, height, -distance, 1);
+        if (this.shadow_demo) {
+            this.light_position = vec4(distance, 10, height, 1);
+        } else {
+            this.light_position = vec4(1, height, -distance, 1);
+        }
         const light_view_target = vec4(0, 0, 0, 1)
-        const light_color = color(1, 1, 1, 1);
+        // const light_brightness = Math.max(Math.cos(day_cycle), 0)
+        const light_brightness = 0.9;
+        const light_color = color(light_brightness, light_brightness, light_brightness, 1);
         program_state.lights = [
             new Light(
-                light_position,
+                this.light_position,
                 light_color,
                 10 ** (radius)
             )
         ];
-        G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sun);
 
-        // Draw the sky as a giant blue sphere
-        model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.scale(500, 500, 500));
-        G.shapes.sphere.draw(context, program_state, model_transform, this.materials.sky);
-        model_transform = Mat4.identity();
+        // Set coordinate system matrix at the origin
+        let model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.translation(0, 0, 0));
 
         // Step 1: set the perspective and camera to the POV of light
         const light_view_mat = Mat4.look_at(
-            vec3(light_position[0], light_position[1], light_position[2]),
+            vec3(this.light_position[0], this.light_position[1], this.light_position[2]),
             vec3(light_view_target[0], light_view_target[1], light_view_target[2]),
-            vec3(1, 1, 0), // assume the light to target will have a up dir of +y, maybe need to change according
-            // to your case
+            vec3(0, 1, 0), // assume the light to target will have a up dir of +y
         );
         const light_field_of_view = 130 * Math.PI / 180;
         const light_proj_mat = Mat4.perspective(light_field_of_view, 1, 0.5, 500);
@@ -510,12 +521,14 @@ export class Recreationists extends Scene {
         this.game.update(context, program_state);
 
         // Step 3: display the textures
-        G.shapes.texture_square.draw(context, program_state,
-            Mat4.translation(-.99, .08, 0).times(
-                Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
-            ),
-            G.materials.depth_tex.override({texture: this.lightDepthTexture})
-        );
+        if (this.shadow_demo) {
+            G.shapes.texture_square.draw(context, program_state,
+                Mat4.translation(-.99, .08, 0).times(
+                    Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
+                ),
+                G.materials.depth_tex.override({texture: this.lightDepthTexture})
+            );
+        }
     }
 
     render(context, program_state, model_transform, shadow) {
@@ -529,30 +542,48 @@ export class Recreationists extends Scene {
         //console.log("Rendering");
 
         program_state.draw_shadow = shadow;
+        const t = program_state.animation_time;
+
+        if (shadow) {
+            // Draw the sun
+            G.shapes.sphere.draw(context, program_state,
+                Mat4.translation(this.light_position[0], this.light_position[1], this.light_position[2])
+                    .times(Mat4.scale(1, 1, 1)),
+                this.materials.sun);
+        }
+
+        // Draw the sky as a giant blue sphere
+        model_transform = Mat4.identity();
+        model_transform = model_transform.times(Mat4.scale(200, 200, 200));
+        if (shadow) {
+            G.shapes.sphere.draw(context, program_state, model_transform, shadow ? this.materials.sky : G.materials.pure);
+        }
+        model_transform = Mat4.identity();
 
         // Draw the ground
         model_transform = model_transform
+            .times(Mat4.translation(0, -.1, 0))
             .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(1000, 1000, 1))
-        G.shapes.square.draw(context, program_state, model_transform, shadow ? this.materials.brickGround : this.materials.pure);
+            .times(Mat4.scale(1000, 1000, .1))
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.brickGround : this.materials.pure);
 
         model_transform = Mat4.identity();
 
         // Draw the grass
         model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
             .times(Mat4.translation(0, 60, 0.01))
-            .times(Mat4.scale(80, 40, 1));
-        G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
+            .times(Mat4.scale(80, 40, .1));
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.grass : G.materials.pure);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
             .times(Mat4.translation(0, -60, 0.01))
-            .times(Mat4.scale(80, 40, 1));
-        G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
+            .times(Mat4.scale(80, 40, .1));
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.grass: G.materials.pure);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
-            .times(Mat4.translation(0, 180, 0.01))
-            .times(Mat4.scale(80, 60, 1));
-        G.shapes.square.draw(context, program_state, model_transform, this.materials.grass);
+            .times(Mat4.translation(0, -180, 0.01))
+            .times(Mat4.scale(80, 60, .1));
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.grass : G.materials.pure);
 
 
         // Draw buildings:
@@ -560,11 +591,11 @@ export class Recreationists extends Scene {
         // Box
         model_transform = Mat4.identity().times(Mat4.translation(-125, 0, -180))
             .times(Mat4.scale(25, 40, 60));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // Roof
         model_transform = Mat4.identity().times(Mat4.translation(-125, 40, -180))
             .times(Mat4.scale(25, 10, 119.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? this.materials.roof: G.materials.pure);
 
         // 2) Draw Royce
         // // Rear Box
@@ -601,58 +632,58 @@ export class Recreationists extends Scene {
         // Main Box
         model_transform = Mat4.identity().times(Mat4.translation(220, 0, 0))
             .times(Mat4.scale(100, 50, 80));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // Roof for Main Box
         model_transform = Mat4.identity().times(Mat4.translation(120 + 25, 50, 0))
             .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         model_transform = Mat4.identity().times(Mat4.translation(120 + 75, 50, 0))
             .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         model_transform = Mat4.identity().times(Mat4.translation(120 + 125, 50, 0))
             .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         model_transform = Mat4.identity().times(Mat4.translation(120 + 175, 50, 0))
             .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         // Draw entrance inner building
         model_transform = Mat4.identity().times(Mat4.translation(215, 0, 0))
             .times(Mat4.scale(105, 50, 25));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // Draw roof for entrance
         model_transform = Mat4.identity().times(Mat4.translation(215, 50, 0))
             .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
             .times(Mat4.scale(25, 10, 210));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // Draw the two columns
         // First column
         model_transform = Mat4.identity().times(Mat4.translation(110, 0, -25))
             .times(Mat4.scale(2.5, 60, 2.5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // Place cone above tower
         model_transform = Mat4.identity().times(Mat4.translation(110, 60 + 4, -25))
             .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(2.5, 2.5, 4));
-        G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.cone.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         // Second column
         // Place cone above tower
         model_transform = Mat4.identity().times(Mat4.translation(110, 0, 25))
             .times(Mat4.scale(2.5, 60, 2.5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // Place cone above tower
         model_transform = Mat4.identity().times(Mat4.translation(110, 60 + 4, 25))
             .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(2.5, 2.5, 4));
-        G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.cone.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         // Draw the octogon blocks
         model_transform = Mat4.identity().times(Mat4.translation(150, 0, 0))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(20, 20, 150));
-        G.shapes.octogon.draw(context, program_state, model_transform, this.materials.roof);
+        G.shapes.octogon.draw(context, program_state, model_transform, shadow ? this.materials.roof : G.materials.pure);
         model_transform = Mat4.identity().times(Mat4.translation(150, 0, 0))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(15, 15, 170));
-        G.shapes.octogon.draw(context, program_state, model_transform, this.materials.building);
+        G.shapes.octogon.draw(context, program_state, model_transform, shadow ? this.materials.building : G.materials.pure);
         // to-do: Place octogon pyramid on top of octogons
 
         // to-do: Draw fountain
@@ -660,11 +691,11 @@ export class Recreationists extends Scene {
         model_transform = Mat4.identity().times(Mat4.translation(0, 0.02, 100))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(20, 20, 1));
-        G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
+        G.shapes.circle.draw(context, program_state, model_transform, shadow ? this.materials.brickGround : G.materials.pure);
         model_transform = Mat4.identity().times(Mat4.translation(0, 0.02, -240))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
             .times(Mat4.scale(30, 30, 1));
-        G.shapes.circle.draw(context, program_state, model_transform, this.materials.brickGround);
+        G.shapes.circle.draw(context, program_state, model_transform, shadow ? this.materials.brickGround : G.materials.pure);
         //--------------------------------------------------------------------------------
 
         this.game.draw(context, program_state, shadow);
@@ -727,7 +758,7 @@ class Game {
         this.entities.push(new Bush(106.8, 1.2, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(107.4, 1.6, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(108, 2, -32, 3, 2, 3, "#00FF00"));
-        this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214")); 
+        this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214"));
         this.entities.push(new Bush(115, 0, -60, 5, 5, 25, "#00FF00"));
 
         //objects next to powell library, right of stairs
@@ -917,7 +948,7 @@ class Trash {
         .times(Mat4.translation(this.x, this.y + 2.3, this.z))
         .times(Mat4.rotation(1.57, 1, 0, 0))
         .times(Mat4.scale(1.05, 1.05, .6));
-        
+
         var color = "";
 
         if(this.isblue)
@@ -988,7 +1019,7 @@ class Flower {
             .times(Mat4.rotation(i, 0, 0, 1))
             .times(Mat4.scale(.1, .5, .05));
             G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({color: hex_color(this.color)}));
-        }        
+        }
     }
 }
 
