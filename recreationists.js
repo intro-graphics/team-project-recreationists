@@ -1485,6 +1485,7 @@ class Player {
         this.socket_id = socket_id;
         this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
+        this.rocking_time=0;
         this.rocking_angle=0;
         this.rocking_angle2=0;
         this.rocking_angle3=0;//Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
@@ -1499,7 +1500,11 @@ class Player {
                                         .times(Mat4.scale(1, 1.7, 1));
         //let player_box = this.player_matrix.times(Mat4.scale(1, 2, 1));
         this.collision_box.emplace(player_box, 0, 0);
-
+        /*
+        this.rocking_time+=program_state.animation_delta_time/1000;
+        this.rocking_angle=Math.PI/24*Math.sin(2*Math.PI*1/1*this.rocking_time);
+        this.rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*this.rocking_time);
+        */
         // assume this is a remote player
         if (this.socket_id !== G.player_id) {
             let pos = G.remote_data[this.socket_id];
@@ -1642,7 +1647,7 @@ class LocalPlayer extends Player {
             this.colorArray[j]=color(Math.random(), Math.random(), Math.random(), 1.0);
             */
        
-       this.rocking_time=0;
+       //this.rocking_time=0; // Already created in parent player class
        this.playerMoved=false;
        //this.rocking_angle=0; // already defined in parent player class
        //this.rocking_angle2=0;// already defined in parent player class
