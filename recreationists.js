@@ -1594,15 +1594,16 @@ class Player {
                                                  .times(Mat4.rotation(theta,0,0,1))
                                                  .times(Mat4.translation(0.6,-1.5,0));
             
+            let rocking_angle3=Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
             // Draw head as one cube on top of the upper body centered at (0, 1.5 + 0.5, 0)
             // Dimensions are 1.0x1.0x1.0
             // Head:
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,2,0))
-                                                 .times(Mat4.translation(this.rocking_angle3*0.25,0,0))
+                                                 .times(Mat4.translation(rocking_angle3*0.25,0,0))
                                                  .times(Mat4.scale(0.5,0.5,0.5));
             G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[3]}) : G.materials.pure.override({color:this.colorArray[3]}));
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.5,1/0.5,1/0.5))
-                                                 .times(Mat4.translation(-this.rocking_angle3*0.25,0,0))
+                                                 .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
 
             
