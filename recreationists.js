@@ -320,7 +320,7 @@ export class Recreationists extends Scene {
             sky: new Material(new defs.Phong_Shader(),
                 {ambient: 0.2, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
             sun: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: 0.5, color: hex_color("#f7c600"), smoothness: 100}),
+                {ambient: 1, diffusivity: 0, color: hex_color("#f7c600")}),
             whiteSquare: new Material(new Shadow_Textured_Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#f5eee9"), smoothness: 60}),
             grass: new Material(new Shadow_Textured_Phong_Shader(),
@@ -369,8 +369,16 @@ export class Recreationists extends Scene {
         this.lightDepthTexture = gl.createTexture();
         // Bind it to TinyGraphics
         this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
-        G.materials.player.light_depth_texture = this.light_depth_texture;
-        this.materials.brickGround.light_depth_texture = this.light_depth_texture;
+        for (const [key, value] of Object.entries(this.materials)) {
+            if (value.shader instanceof Shadow_Textured_Phong_Shader) {
+                this.materials[key].light_depth_texture = this.light_depth_texture;
+            }
+        }
+        for (const [key, value] of Object.entries(G.materials)) {
+            if (value.shader instanceof Shadow_Textured_Phong_Shader) {
+                G.materials[key].light_depth_texture = this.light_depth_texture;
+            }
+        }
 
         this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
         gl.bindTexture(gl.TEXTURE_2D, this.lightDepthTexture);
@@ -482,7 +490,7 @@ export class Recreationists extends Scene {
             new Light(
                 this.light_position,
                 light_color,
-                10 ** (radius)
+                10 ** 3
             )
         ];
 
@@ -863,31 +871,31 @@ class Royce {
         // Rear Box
         model_transform = Mat4.identity().times(Mat4.translation(-145, 0, 0))
             .times(Mat4.scale(25, 35, 80));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.building : G.materials.pure);
         // Roof for Rear Box
         model_transform = Mat4.identity().times(Mat4.translation(-145, 35, 0))
             .times(Mat4.scale(25, 9, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, G.materials.roof);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? G.materials.roof : G.materials.pure);
         // Draw middle box
         model_transform = Mat4.identity().times(Mat4.translation(-160, 0, 0))
             .times(Mat4.scale(60, 35, 30));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.building : G.materials.pure);
         // Draw middle box roof
         model_transform = Mat4.identity().times(Mat4.translation(-160, 35, 0))
             .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
             .times(Mat4.scale(30, 20, 120));
-        G.shapes.prism.draw(context, program_state, model_transform, G.materials.building);
+        G.shapes.prism.draw(context, program_state, model_transform, shadow ? G.materials.building : G.materials.pure);
         // Draw two towers with their rooves
         // First tower
         model_transform = Mat4.identity().times(Mat4.translation(-110, 0, -35))
             .times(Mat4.scale(12, 70, 10));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.building : G.materials.pure);
         // to-do: Draw a pyramid roof
 
         // Second tower
         model_transform = Mat4.identity().times(Mat4.translation(-110, 0, 35))
             .times(Mat4.scale(12, 70, 10));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.building : G.materials.pure);
         // to-do: Draw a pyramid roof
     }
 }
@@ -908,15 +916,15 @@ class Tree {
         let model_transform = Mat4.identity().times(Mat4.translation(this.x, this.y, this.z))
             .times(Mat4.scale(.5, 6, .5));
         this.collision_box.emplace(model_transform, 0, 0);
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.tree_bark);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.tree_bark : G.materials.pure);
 
         model_transform = Mat4.identity().times(Mat4.translation(this.x, this.y + 7, this.z))
             .times(Mat4.scale(3, 2, 3));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({ambient: .5}));
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.grass.override({ambient: .5}) : G.materials.pure);
 
         model_transform = Mat4.identity().times(Mat4.translation(this.x, this.y + 10, this.z))
             .times(Mat4.scale(2, 1, 2));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({ambient: .6}));
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.grass.override({ambient: .6}) : G.materials.pure);
     }
 }
 
@@ -942,7 +950,7 @@ class Trash {
         .times(Mat4.translation(this.x, this.y+1, this.z))
         .times(Mat4.rotation(1.57, 1, 0, 0))
         .times(Mat4.scale(1, 1, 3.5));
-        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.trash_bin);
+        G.shapes.cylinder.draw(context, program_state, model_transform, shadow ? G.materials.trash_bin : G.materials.pure);
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(this.x, this.y + 2.3, this.z))
@@ -956,7 +964,7 @@ class Trash {
         else
             color = "#00FF00";
 
-        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.trash_bin.override({color: hex_color(color)}));
+        G.shapes.cylinder.draw(context, program_state, model_transform, shadow ? G.materials.trash_bin.override({color: hex_color(color)}) : G.materials.pure);
     }
 }
 
@@ -972,23 +980,23 @@ class Lamppost {
         .times(Mat4.translation(this.x, this.y + 3, this.z))
         .times(Mat4.scale(.1, 10, .1))
         .times(Mat4.rotation(Math.PI/2, 1, 0, 0));
-        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.lamppost);
+        G.shapes.cylinder.draw(context, program_state, model_transform, shadow ? G.materials.lamppost : G.materials.pure);
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(this.x, this.y + 8, this.z))
         .times(Mat4.rotation(1.57, 0, 1, 0))
         .times(Mat4.scale(.1, .1, 3));
-        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.lamppost);
+        G.shapes.cylinder.draw(context, program_state, model_transform, shadow ? G.materials.lamppost : G.materials.pure);
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(this.x + 1.2, this.y + 7, this.z))
         .times(Mat4.scale(.5, 1, .5));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.flower_center : G.materials.pure);
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(this.x - 1.2, this.y + 7, this.z))
         .times(Mat4.scale(.5, 1, .5));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.flower_center : G.materials.pure);
     }
 }
 
@@ -1005,12 +1013,12 @@ class Flower {
         let model_transform = Mat4.identity()
         .times(Mat4.translation(this.x, this.y, this.z))
         .times(Mat4.scale(.1, .6, .1));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.grass : G.materials.pure);
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(this.x, this.y + .6, this.z))
         .times(Mat4.scale(.2, .2, .2));
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.flower_center : G.materials.pure);
 
         var i;
         for (i = 10; i < 60; i = i + 10) {
@@ -1018,7 +1026,7 @@ class Flower {
             .times(Mat4.translation(this.x, this.y + .6, this.z))
             .times(Mat4.rotation(i, 0, 0, 1))
             .times(Mat4.scale(.1, .5, .05));
-            G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({color: hex_color(this.color)}));
+            G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.grass.override({color: hex_color(this.color)}) : G.materials.pure);
         }
     }
 }
@@ -1053,7 +1061,7 @@ class Stairs {
 
         var i;
         for (i = 0; i < this.num_steps; i++) {
-            G.shapes.cube.draw(context, program_state, model_transform, G.materials.brick_stairs);
+            G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.brick_stairs : G.materials.pure);
             model_transform = Mat4.identity()
             .times(Mat4.translation(this.x + orient * this.size * (i + 1), this.y + this.size * (i + 2), this.z))
             .times(Mat4.scale(this.size, this.size, this.length ));
@@ -1081,7 +1089,7 @@ class Bush {
         .times(Mat4.scale(this.width, this.height, this.length))
         this.collision_box.emplace(model_transform, 0, 0);
 
-        G.shapes.cube.draw(context, program_state, model_transform, G.materials.grass.override({color: hex_color(this.color)}));
+        G.shapes.cube.draw(context, program_state, model_transform, shadow ? G.materials.grass.override({color: hex_color(this.color)}) : G.materials.pure);
     }
 }
 
