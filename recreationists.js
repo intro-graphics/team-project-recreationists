@@ -577,144 +577,17 @@ export class Recreationists extends Scene {
         .times(Mat4.scale(5, 1, 18));
         G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
 
-
-        // Draw buildings:
-        // 1) Draw simple building
-        // Box
-        model_transform = Mat4.identity().times(Mat4.translation(-125, 0, -180))
-            .times(Mat4.scale(25, 40, 60));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // Roof
-        model_transform = Mat4.identity().times(Mat4.translation(-125, 40, -180))
-            .times(Mat4.scale(25, 10, 119.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-
-
-        // 2) Draw Royce
-        // // Rear Box
-        // model_transform = Mat4.identity().times(Mat4.translation(-145,0,0))
-        //                                  .times(Mat4.scale(25,35,80));
-        // G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // // Roof for Rear Box
-        // model_transform = Mat4.identity().times(Mat4.translation(-145,35,0))
-        //                                  .times(Mat4.scale(25,9,159.8));
-        // G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-        // // Draw middle box
-        // model_transform = Mat4.identity().times(Mat4.translation(-160,0,0))
-        //                                  .times(Mat4.scale(60,35,30));
-        // G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // // Draw middle box roof
-        // model_transform = Mat4.identity().times(Mat4.translation(-160,35,0))
-        //                                  .times(Mat4.rotation(Math.PI/2,0,1,0))
-        //                                  .times(Mat4.scale(30,20,120));
-        // G.shapes.prism.draw(context, program_state, model_transform, this.materials.building);
-        // // Draw two towers with their rooves
-        // // First tower
-        // model_transform = Mat4.identity().times(Mat4.translation(-110,0,-35))
-        //                                  .times(Mat4.scale(12,70,10));
-        // G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // // to-do: Draw a pyramid roof
-
-        // // Second tower
-        // model_transform = Mat4.identity().times(Mat4.translation(-110,0,35))
-        //                                  .times(Mat4.scale(12,70,10));
-        // G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // // to-do: Draw a pyramid roof
-
-        // 3) Draw Powell
-        // Main Box
-        model_transform = Mat4.identity().times(Mat4.translation(220, 0, 0))
-            .times(Mat4.scale(100, 50, 80));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // Roof for Main Box
-        model_transform = Mat4.identity().times(Mat4.translation(120 + 25, 50, 0))
-            .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-        model_transform = Mat4.identity().times(Mat4.translation(120 + 75, 50, 0))
-            .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-        model_transform = Mat4.identity().times(Mat4.translation(120 + 125, 50, 0))
-            .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-        model_transform = Mat4.identity().times(Mat4.translation(120 + 175, 50, 0))
-            .times(Mat4.scale(25, 12, 159.8));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.roof);
-        // Draw entrance inner building
-        model_transform = Mat4.identity().times(Mat4.translation(215, 0, 0))
-            .times(Mat4.scale(105, 50, 25));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // Draw roof for entrance
-        model_transform = Mat4.identity().times(Mat4.translation(215, 50, 0))
-            .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
-            .times(Mat4.scale(25, 10, 210));
-        G.shapes.prism.draw(context, program_state, model_transform, this.materials.building);
-        // Draw the two columns
-        // First column
-        model_transform = Mat4.identity().times(Mat4.translation(110, 0, -25))
-            .times(Mat4.scale(2.5, 60, 2.5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // Place cone above tower
-        model_transform = Mat4.identity().times(Mat4.translation(110, 60 + 4, -25))
-            .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(2.5, 2.5, 4));
-        G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
-        // Second column
-        // Place cone above tower
-        model_transform = Mat4.identity().times(Mat4.translation(110, 0, 25))
-            .times(Mat4.scale(2.5, 60, 2.5));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.building);
-        // Place cone above tower
-        model_transform = Mat4.identity().times(Mat4.translation(110, 60 + 4, 25))
-            .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(2.5, 2.5, 4));
-        G.shapes.cone.draw(context, program_state, model_transform, this.materials.roof);
-        // Draw the octogon blocks
-        model_transform = Mat4.identity().times(Mat4.translation(150, 0, 0))
-            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(20, 20, 150));
-        G.shapes.octogon.draw(context, program_state, model_transform, this.materials.roof);
-        model_transform = Mat4.identity().times(Mat4.translation(150, 0, 0))
-            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-            .times(Mat4.scale(15, 15, 170));
-        G.shapes.octogon.draw(context, program_state, model_transform, this.materials.building);
-        // to-do: Place octogon pyramid on top of octogons
-
-        // to-do: Draw fountain
-        // Place circle on top of grass
-
-/*
-        var i;
-        for (i = .1; i < 6.28; i = i + .4) {
-            model_transform = Mat4.identity()
-            .times(Mat4.translation(0, 0, 100))
-            .times(Mat4.rotation(i + 1.57, 0, 1, 0))
-            .times(Mat4.translation(0, 0, 20))
-            .times(Mat4.scale(4, 2, 1));
-
-            G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
-        }        
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(94, 0, -225))
+        .times(Mat4.scale(5, 1, 15));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
 
         model_transform = Mat4.identity()
-        .times(Mat4.translation(0, 1.8, 100))
-        .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-        .times(Mat4.scale(19, 19, 1));
-        G.shapes.circle.draw(context, program_state, model_transform, this.materials.whiteSquare.override({color: hex_color("#00006F")}));
+        .times(Mat4.translation(94, 0, -150))
+        .times(Mat4.scale(4, 3, 40))
+        .times(Mat4.rotation(-.8, 0, 0, 1));
+        G.shapes.cube.draw(context, program_state, model_transform, this.materials.grass);
 
-        model_transform = Mat4.identity()
-        .times(Mat4.translation(40, 0, 100))
-        .times(Mat4.scale(20, 2, 3));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
-
-        model_transform = Mat4.identity()
-        .times(Mat4.translation(-40, 0, 100))
-        .times(Mat4.scale(20, 2, 3));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.brick_stairs);
-
-        model_transform = Mat4.identity()
-        .times(Mat4.translation(0, 5, 100))
-        .times(Mat4.scale(.8, 5, .8));
-        G.shapes.cube.draw(context, program_state, model_transform, this.materials.whiteSquare.override({color: hex_color("#0000FF")}));
-*/
         //Other end
         model_transform = Mat4.identity().times(Mat4.translation(0, 0.02, -240))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
@@ -746,6 +619,7 @@ class Game {
         this.entities.push(new Lamppost(78, 0, 50));
         this.entities.push(new Lamppost(-78, 0, 50));
         this.entities.push(new Bush(70, 0, 103, 7, 2, 2, "#00FF00"));
+        this.entities.push(new Bush(-70, 0, 95, 7, 2, 2, "#00FF00"));
 
         //objects on 2nd grass patch
         this.entities.push(new Tree(73, 0, -25));
@@ -798,7 +672,7 @@ class Game {
         //objects next to Royce Hall, left of stairs
         this.entities.push(new Bush(-95, 0, 36, 7, 5, 8.5, "#00FF00"));
         this.entities.push(new Bush(-97, 0, 63, 1.5, 4, 16, "#00FF00"));
-        this.entities.push(new Tree(-95, 0, 90));
+        this.entities.push(new Tree(-75, 0, 90));
 
         //objects next to Royce Hall, right of stairs
         this.entities.push(new Bush(-95, 0, -35.5, 7, 5, 8.5, "#00FF00"));
@@ -814,12 +688,36 @@ class Game {
         this.entities.push(new Bush(-93, 0, -145, 1, 2.5, 25, "#00FF00"));
         this.entities.push(new Bush(-93, 0, -215, 1, 2.5, 25, "#00FF00"));
 
+        //objects next to Kaplan Hall
+        this.entities.push(new Stairs(91, 0, -200, 10, 13, .3, 0));
+        var iter = 0;
+        for(iter = 0; iter < 4; iter = iter + 1) {
+            this.entities.push(new Flower(89 + .8 * iter, .8 + .5 * iter, -189, "#FF0000"));
+            this.entities.push(new Flower(89 + .8 * iter, .8 + .5 * iter, -188, "#FFFFFF"));
+            this.entities.push(new Flower(89 + .8 * iter, .8 + .5 * iter, -187, "#0000FF"));
+        }
+        this.entities.push(new Bush(97, 2, -150, 2, 5, 40.5, "#00FF00"));
+        this.entities.push(new Tree(90, 2, -170));
+        this.entities.push(new Bush(97, 2, -225, 2, 3.5, 15, "#00FF00"));
+        for(iter = 0; iter < 4; iter = iter + 1) {
+            this.entities.push(new Flower(89 + .8 * iter, 1 , -212, "#FFFF00"));
+            this.entities.push(new Flower(89 + .8 * iter, 1, -214, "#0000FF"));
+        }
+        //this.entities.push(new Flower(89, .8, -190, "#FFFFFF"));
+
         //Fountain
         this.entities.push(new Fountain());
         this.entities.push(new Bush(40, 0, 100, 20, 2, 3, "#975d53"));
         this.entities.push(new Bush(-40, 0, 100, 20, 2, 3, "#975d53"));
 
         this.entities.push(new Royce()); // Bella's Royce Hall
+        this.entities.push(new Haines()); //Haines Hall
+        this.entities.push(new Powell()); //Powell Library
+        this.entities.push(new Kaplan()); //Kaplan Hall
+
+
+        //flagpole
+        this.entities.push(new Flagpole());
 
         let local_player = new LocalPlayer();
         this.entities.push(local_player);
@@ -935,6 +833,134 @@ class Royce {
     }
 }
 
+class Powell {
+    constructor() {
+        this.collision_box = G.register.register(vec3(0, 0, 0)); 
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(220, 0, 0))
+        .times(Mat4.scale(100, 50, 80));
+
+        this.collision_box.emplace(model_transform, 0, 0);
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        // Roof for Main Box
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(120 + 25, 50, 0))
+        .times(Mat4.scale(25, 12, 159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, G.materials.roof);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(120 + 75, 50, 0))
+        .times(Mat4.scale(25, 12, 159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, G.materials.roof);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(120 + 125, 50, 0))
+        .times(Mat4.scale(25, 12, 159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, G.materials.roof);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(120 + 175, 50, 0))
+        .times(Mat4.scale(25, 12, 159.8));
+        G.shapes.prism.draw(context, program_state, model_transform, G.materials.roof);
+        // Draw entrance inner building
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(215, 0, 0))
+        .times(Mat4.scale(105, 50, 25));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        // Draw roof for entrance
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(215, 50, 0))
+        .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
+        .times(Mat4.scale(25, 10, 210));
+        G.shapes.prism.draw(context, program_state, model_transform, G.materials.building);
+        // Draw the two columns
+        // First column
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(110, 0, -25))
+        .times(Mat4.scale(2.5, 60, 2.5));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        // Place cone above tower
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(110, 60 + 4, -25))
+        .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+        .times(Mat4.scale(2.5, 2.5, 4));
+        G.shapes.cone.draw(context, program_state, model_transform, G.materials.roof);
+        // Second column
+        // Place cone above tower
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(110, 0, 25))
+        .times(Mat4.scale(2.5, 60, 2.5));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        // Place cone above tower
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(110, 60 + 4, 25))
+        .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+        .times(Mat4.scale(2.5, 2.5, 4));
+        G.shapes.cone.draw(context, program_state, model_transform, G.materials.roof);
+        // Draw the octogon blocks
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(150, 0, 0))
+        .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+        .times(Mat4.scale(20, 20, 150));
+        G.shapes.octogon.draw(context, program_state, model_transform, G.materials.roof);
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(150, 0, 0))
+        .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+        .times(Mat4.scale(15, 15, 170));
+        G.shapes.octogon.draw(context, program_state, model_transform, G.materials.building);
+    }
+}
+
+class Haines {
+    constructor() {
+        this.collision_box = G.register.register(vec3(0, 0, 0)); 
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(-125, 0, -180))
+        .times(Mat4.scale(25, 40, 60));
+        this.collision_box.emplace(model_transform, 0, 0);
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+        // Roof
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-125, 40, -180))
+        .times(Mat4.scale(25, 10, 119.8));
+        G.shapes.prism.draw(context, program_state, model_transform, G.materials.roof);
+
+    }
+
+}
+
+class Kaplan {
+    constructor() {
+        this.collision_box = G.register.register(vec3(0, 0, 0));
+    }
+
+    update(context, program_state) {        
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(125, 0, -180))
+        .times(Mat4.scale(25, 40, 60));
+        this.collision_box.emplace(model_transform, 0, 0);
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(105, 0, -200))
+        .times(Mat4.scale(10, 45, 10));
+        G.shapes.cube.draw(context, program_state, model_transform, G.materials.building.override({color: hex_color("#FFFFFF")}));
+    }
+}
+
 class Tree {
     constructor(x, y, z) {
         this.x = x;
@@ -1032,6 +1058,30 @@ class Lamppost {
         .times(Mat4.translation(this.x - 1.2, this.y + 7, this.z))
         .times(Mat4.scale(.5, 1, .5));
         G.shapes.cube.draw(context, program_state, model_transform, G.materials.flower_center);
+    }
+}
+
+class Flagpole {
+    constructor() {
+        this.collision_box = G.register.register(vec3(0, 0, 0));
+    }
+
+    update(context, program_state) {
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+        .times(Mat4.translation(0, 30, -250))
+        .times(Mat4.scale(.5, 60, .5))
+        .times(Mat4.rotation(Math.PI/2, 1, 0, 0));
+        this.collision_box.emplace(model_transform, 0, 0);
+        G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.lamppost);
+
+        model_transform = Mat4.identity()
+        .times(Mat4.translation(-10, 55, -250))
+        .times(Mat4.scale(10, 5, 1));
+
+        G.shapes.square.draw(context, program_state, model_transform, G.materials.whiteSquare);
     }
 }
 
@@ -1235,12 +1285,12 @@ class LocalPlayer extends Player {
             //this.acceleration = this.acceleration.plus([0, 0, -this.speed]);
             //this.player_matrix = this.player_matrix.times(Mat4.translation(0, 0, -this.speed));
             //this.velocity = vec3(this.velocity.x, this.velocity.y, -this.speed );
-            this.velocity[2] = -this.speed;
+            this.velocity[2] = -this.speed * 3;
         }
         if (G.controls.s === true) {
             G.key_was_pressed = true;
             //this.player_matrix = this.player_matrix.times(Mat4.translation(0, 0, this.speed));
-            this.velocity[2] = this.speed;
+            this.velocity[2] = this.speed * 3;
         }
         if (G.controls.d === true) {
             G.key_was_pressed = true;
@@ -1313,7 +1363,7 @@ class LocalPlayer extends Player {
         // }
 
 
-        const g = -9.8 * 0.001;
+        const g = -9.8 * 0.0015;
 
         this.apply_force([0, g, 0]); // gravity
 
