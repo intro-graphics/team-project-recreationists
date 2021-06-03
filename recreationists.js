@@ -345,6 +345,7 @@ export class Recreationists extends Scene {
 
         this.day_night_cycle = true;
         this.shadow_init = false;
+        this.shadow_demo = true;
 
         this.game = new Game();
     }
@@ -360,6 +361,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Hide other players", ["Shift", "Y"], () => G.hide_other_players = !G.hide_other_players);
         this.key_triggered_button("Hide my player", ["Shift", "U"], () => G.hide_my_player = !G.hide_my_player);
         this.key_triggered_button("Toggle day-night cycle", ["Shift", "P"], () => this.day_night_cycle = !this.day_night_cycle);
+        this.key_triggered_button("Toggle shadow", ["Shift", "O"], () => this.shadow_demo = !this.shadow_demo)
     }
 
     draw_tree(context, program_state, x, y, z) {
@@ -534,12 +536,19 @@ export class Recreationists extends Scene {
         if (this.day_night_cycle) {
             day_cycle = Math.PI * t / day_time;
         }
-        let sun_dist = 20; // distance from sun to origin (as it revolves)
+        // day_cycle = 0;
+        let sun_dist = 50; // distance from sun to origin (as it revolves)
+        if (this.shadow_demo) {
+            sun_dist = 20;
+        }
         let distance = Math.sin(day_cycle) * sun_dist;
         let height = Math.cos(day_cycle) * sun_dist;
         let radius = 10; // radius of sun
-        // this.light_position = vec4(1, height, -distance, 1);
-        this.light_position = vec4(distance, 10, height, 1);
+        if (this.shadow_demo) {
+            this.light_position = vec4(distance, 10, height, 1);
+        } else {
+            this.light_position = vec4(1, height, -distance, 1);
+        }
         const light_view_target = vec4(0, 0, 0, 1)
         // const light_brightness = Math.max(Math.cos(day_cycle), 0)
         const light_brightness = 0.9;
@@ -587,12 +596,14 @@ export class Recreationists extends Scene {
         this.game.update(context, program_state);
 
         // Step 3: display the textures
-        G.shapes.texture_square.draw(context, program_state,
-            Mat4.translation(-.99, .08, 0).times(
-                Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
-            ),
-            G.materials.depth_tex.override({texture: this.lightDepthTexture})
-        );
+        if (this.shadow_demo) {
+            G.shapes.texture_square.draw(context, program_state,
+                Mat4.translation(-.99, .08, 0).times(
+                    Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
+                ),
+                G.materials.depth_tex.override({texture: this.lightDepthTexture})
+            );
+        }
     }
 
     render(context, program_state, model_transform, shadow) {
