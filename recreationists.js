@@ -205,7 +205,7 @@ class G {
     };
 
     static materials = {
-        player: new Material(new Shadow_Textured_Phong_Shader(1),
+        player: new Material(new Shadow_Textured_Phong_Shader(),
             {
                 ambient: .1,
                 diffusivity: .9,
@@ -470,21 +470,23 @@ export class Recreationists extends Scene {
             day_cycle = Math.PI * t / day_time;
         }
         // day_cycle = 0;
-        let sun_dist = 50; // distance from sun to origin (as it revolves)
+        let sun_dist = 100; // distance from sun to origin (as it revolves)
         if (this.shadow_demo) {
-            sun_dist = 20;
+            sun_dist = 10;
         }
         let distance = Math.sin(day_cycle) * sun_dist;
         let height = Math.cos(day_cycle) * sun_dist;
         let radius = 10; // radius of sun
         if (this.shadow_demo) {
-            this.light_position = vec4(distance, 10, height, 1);
+            this.light_position = vec4(distance, 15, height, 1);
         } else {
             this.light_position = vec4(1, height, -distance, 1);
         }
         const light_view_target = vec4(0, 0, 0, 1)
-        // const light_brightness = Math.max(Math.cos(day_cycle), 0)
-        const light_brightness = 0.9;
+        let light_brightness = Math.max(Math.cos(day_cycle), 0)
+        if (this.shadow_demo) {
+            light_brightness = 1;
+        }
         const light_color = color(light_brightness, light_brightness, light_brightness, 1);
         program_state.lights = [
             new Light(
