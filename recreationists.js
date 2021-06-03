@@ -1479,7 +1479,7 @@ class Player {
     constructor(socket_id) {
         this.player_matrix =Mat4.identity()
                                             //.times(Mat4.scale(1, 2, 1))
-                                            .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 40 - 20))
+                                            .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 200 - 100))
                                             //.times(Mat4.scale(1, 2, 1))
                                             ;
         this.socket_id = socket_id;
