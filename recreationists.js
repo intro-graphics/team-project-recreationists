@@ -302,7 +302,7 @@ class G {
             {ambient: .2, diffusivity: 0.9, color: hex_color("#2f8214"), smoothness: 60}),
         brickGround: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: .1, diffusivity: 1, color: hex_color("#fcc89a"), smoothness: 100}),
-        sky: new Material(new Shadow_Textured_Phong_Shader(),
+        sky: new Material(new defs.Phong_Shader(),
             {ambient: 0.2, diffusivity: .6, color: hex_color("#a3fcff"), smoothness: 40}),
         sun: new Material(new Shadow_Textured_Phong_Shader(),
             {ambient: 1, diffusivity: 0.5, color: hex_color("#f7c600"), smoothness: 100}),
@@ -550,7 +550,7 @@ export class Recreationists extends Scene {
             console.log("Shadows initialized");
             this.shadow_init = true;
         }
-        
+
         // Draw the background
         //---------------------------------------------------
 
@@ -574,11 +574,11 @@ export class Recreationists extends Scene {
             this.light_position = vec4(1, height, -distance, 1);
         }
         const light_view_target = vec4(0, 0, 0, 1)
-        let light_brightness = Math.max(Math.cos(day_cycle), 0)
+        this.light_brightness = Math.max(Math.cos(day_cycle), 0)
         if (this.shadow_demo) {
-            light_brightness = 1;
+            this.light_brightness = 1;
         }
-        const light_color = color(light_brightness, light_brightness, light_brightness, 1);
+        const light_color = color(this.light_brightness, this.light_brightness, this.light_brightness, 1);
         program_state.lights = [
             new Light(
                 this.light_position,
@@ -589,7 +589,7 @@ export class Recreationists extends Scene {
 
         //if (this.shadow_demo) {
         // Set coordinate system matrix at the origin
-        
+
 
         // Step 1: set the perspective and camera to the POV of light
         const light_view_mat = Mat4.look_at(
@@ -658,15 +658,16 @@ export class Recreationists extends Scene {
                 this.materials.sun);
         }
 
-        /*
         // Draw the sky as a giant blue sphere
         model_transform = Mat4.identity();
-        model_transform = model_transform.times(Mat4.scale(200, 200, 200));
+        model_transform = model_transform.times(Mat4.scale(200, 200, 400));
         if (shadow) {
-            G.shapes.sphere.draw(context, program_state, model_transform, shadow ? this.materials.sky : G.materials.pure);
+            G.shapes.sphere.draw(context, program_state, model_transform,
+                shadow ?
+                    this.materials.sky.override({ambient: this.light_brightness}) : G.materials.pure);
         }
         model_transform = Mat4.identity();
-        */
+
         // Draw the ground
         model_transform = model_transform
             .times(Mat4.translation(0, -.1, 0))
@@ -907,7 +908,7 @@ class Game {
         this.entities.push(new Bush(105, 0, -60, 5, 1, 25, "#2f8214"));
         this.entities.push(new Bush(115, 0, -60, 5, 5, 25, "#00FF00"));
         */
-        this.entities.push(new Bush(108, 2.5, -32, 3, 2, 3, "#00FF00")); 
+        this.entities.push(new Bush(108, 2.5, -32, 3, 2, 3, "#00FF00"));
         this.entities.push(new Bush(115, 0, -55, 5, 5, 30, "#00FF00"));
 
         //objects next to powell library, right of stairs
@@ -932,7 +933,7 @@ class Game {
         //objects next to Royce Hall, right of stairs
         this.entities.push(new Bush(-95, 0, -35.5, 7, 5, 8.5, "#00FF00"));
         this.entities.push(new Bush(-97, 0, -62.5, 1.5, 4, 17, "#00FF00"));
-        
+
 
         //objects next to Haines Hall
         this.entities.push(new Bush(-97, 0, -180, 3, 2, 60, "#975d53"));
@@ -1092,7 +1093,7 @@ class Royce {
 
 class Powell {
     constructor() {
-        this.collision_box = G.register.register(vec3(0, 0, 0)); 
+        this.collision_box = G.register.register(vec3(0, 0, 0));
     }
 
     update(context, program_state) {
@@ -1174,7 +1175,7 @@ class Powell {
 
 class Haines {
     constructor() {
-        this.collision_box = G.register.register(vec3(0, 0, 0)); 
+        this.collision_box = G.register.register(vec3(0, 0, 0));
     }
 
     update(context, program_state) {
@@ -1201,7 +1202,7 @@ class Kaplan {
         this.collision_box = G.register.register(vec3(0, 0, 0));
     }
 
-    update(context, program_state) {        
+    update(context, program_state) {
     }
 
     draw(context, program_state, shadow) {
@@ -1440,7 +1441,7 @@ class Fountain {
         this.collision_box = G.register.register(vec3(0, 0, 0));
     }
 
-    update(context, program_state) {   
+    update(context, program_state) {
     }
 
     draw(context, program_state, shadow) {
@@ -1458,7 +1459,7 @@ class Fountain {
             .times(Mat4.scale(4, 2, 1));
 
             G.shapes.cube.draw(context, program_state, model_transform, G.materials.brick_stairs);
-        }        
+        }
 
         model_transform = Mat4.identity()
         .times(Mat4.translation(0, 1.8, 100))
@@ -1513,7 +1514,7 @@ class Player {
             this.player_matrix = Matrix.of(pos[0], pos[1], pos[2], pos[3]);
         }
     }
-    
+
     // MADE CHANGES HERE TO DRAW THE PLAYER AND ANIMATE IT
         // Define the directions: +Y: UP
         //                        -Y: DOWN
@@ -1523,19 +1524,19 @@ class Player {
         //                        -Z: Forward  (Toward the campus)
     draw(context, program_state, shadow) {
         if (!G.hide_other_players) {
-            
+
             //G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player : G.materials.pure);
              // The  player_matrix coordinates origin (0,0,0) will represent the bottom-middle of the upper body
             // First draw the upper body as a 1.2x1.5x0.6 rectangle centered at (0, 0.75, 0)
             // Upper Body:
-            
+
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,0.75,0))
                                                  .times(Mat4.scale(0.6,0.75,0.3));
             G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[0]}) : G.materials.pure.override({color:this.colorArray[0]}));
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.6,1/0.75,1/0.3))
                                                  .times(Mat4.translation(0,-0.75,0));
-            
-            // Define angles for rocking the legs and arms 
+
+            // Define angles for rocking the legs and arms
             //let rocking_angle3=Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
             //let rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*program_state.animation_time/1000);
 
@@ -1554,7 +1555,7 @@ class Player {
                                                  .times(Mat4.rotation(-this.rocking_angle,1,0,0))
                                                  .times(Mat4.translation(0,-0.5,0))
                                                  .times(Mat4.translation(0.3,0.5,0));
-            
+
             // Leg 2:
             this.player_matrix=this.player_matrix.times(Mat4.translation(0.3,-0.5,0))
                                                  .times(Mat4.translation(0,0.5,0))
@@ -1567,13 +1568,13 @@ class Player {
                                                  .times(Mat4.rotation(-this.rocking_angle2,1,0,0))
                                                  .times(Mat4.translation(0,-0.5,0))
                                                  .times(Mat4.translation(-0.3,0.5,0));
-            
+
             // Now draw two arms as two rotated rectangles on either side of the body
             // Both of dimensions 0.4x1.5x0.4
             // Both rotated about the shoulders (0.6, 1.5, 0) and (-0.6, 1.5, 0) by an angle theta (z-axis rotation)
             // Arm 1:
             let theta=Math.PI/12;
-            
+
             this.player_matrix=this.player_matrix.times(Mat4.translation(0.6,1.5,0))
                                                  .times(Mat4.rotation(theta,0,0,1))
                                                  .times(Mat4.rotation(this.rocking_angle,1,0,0))
@@ -1585,7 +1586,7 @@ class Player {
                                                  .times(Mat4.rotation(-this.rocking_angle,1,0,0))
                                                  .times(Mat4.rotation(-theta,0,0,1))
                                                  .times(Mat4.translation(-0.6,-1.5,0));
-            
+
             // Arm 2:
             this.player_matrix=this.player_matrix.times(Mat4.translation(-0.6,1.5,0))
                                                  .times(Mat4.rotation(-theta,0,0,1))
@@ -1598,7 +1599,7 @@ class Player {
                                                  .times(Mat4.rotation(-this.rocking_angle2,1,0,0))
                                                  .times(Mat4.rotation(theta,0,0,1))
                                                  .times(Mat4.translation(0.6,-1.5,0));
-            
+
             let rocking_angle3=Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
             // Draw head as one cube on top of the upper body centered at (0, 1.5 + 0.5, 0)
             // Dimensions are 1.0x1.0x1.0
@@ -1611,7 +1612,7 @@ class Player {
                                                  .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
 
-            
+
         }
     }
 }
@@ -1646,7 +1647,7 @@ class LocalPlayer extends Player {
         for (var j=0;j<4;j++)
             this.colorArray[j]=color(Math.random(), Math.random(), Math.random(), 1.0);
             */
-       
+       //
        //this.rocking_time=0; // Already created in parent player class
        this.playerMoved=false;
        //this.rocking_angle=0; // already defined in parent player class
@@ -1762,7 +1763,7 @@ class LocalPlayer extends Player {
             this.rocking_angle=Math.PI/24*Math.sin(2*Math.PI*1/1*this.rocking_time);
             this.rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*this.rocking_time);
         }
-        
+
         this.playerMoved=false;
         const g = -9.8 * 0.001;
 
@@ -1825,8 +1826,8 @@ class LocalPlayer extends Player {
             //                        -X: LEFT     (Toward Royce)
             //                        +Z: Backward (Toward the hill)
             //                        -Z: Forward  (Toward the campus)
-            
-            
+
+
             // If the player is jumping, then the player matrix should rotate so as to create a forward flip
             // Forward flip:
             if (this.jumping == true)
@@ -1834,7 +1835,7 @@ class LocalPlayer extends Player {
                 if (this.jumptime == 0)
                 {
                     // we are at the start of the jump
-                    // update the jump time at each iteration 
+                    // update the jump time at each iteration
 
                     this.jumptime+=0.01;
                 }
@@ -1848,12 +1849,12 @@ class LocalPlayer extends Player {
                     // At 0.5 seconds, start the forward flip by rotating the entire player_matrix forward
                     // About the x-axis
                     // The body must perform one rotation in one second exactly
-                    
+
                     this.jumptime+=0.01;
                     this.flip_angle=2*Math.PI*(this.jumptime-0.5);
                 }
             }
-            
+
             // Perform the forward flip
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,0.75,0));
             this.player_matrix=this.player_matrix.times(Mat4.rotation(this.flip_angle,1,0,0));
@@ -1867,8 +1868,8 @@ class LocalPlayer extends Player {
             G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[0]}) : G.materials.pure.override({color:this.colorArray[0]}));
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.6,1/0.75,1/0.3))
                                                  .times(Mat4.translation(0,-0.75,0));
-            
-            // Define angles for rocking the legs and arms 
+
+            // Define angles for rocking the legs and arms
             let rocking_angle3=Math.PI/24*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
             //let rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*program_state.animation_time/1000);
 
@@ -1905,7 +1906,7 @@ class LocalPlayer extends Player {
             // Both rotated about the shoulders (0.6, 1.5, 0) and (-0.6, 1.5, 0) by an angle theta (z-axis rotation)
             // Arm 1:
             let theta=Math.PI/12;
-            
+
             this.player_matrix=this.player_matrix.times(Mat4.translation(0.6,1.5,0))
                                                  .times(Mat4.rotation(theta,0,0,1))
                                                  .times(Mat4.rotation(this.rocking_angle,1,0,0))
@@ -1942,7 +1943,7 @@ class LocalPlayer extends Player {
                                                  .times(Mat4.translation(0,-2,0));
 
 
-        
+
          // Undo the forward flip rotation
          this.player_matrix=this.player_matrix.times(Mat4.translation(0,0.75,0));
          this.player_matrix=this.player_matrix.times(Mat4.rotation(-this.flip_angle,1,0,0));
