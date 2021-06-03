@@ -688,7 +688,7 @@ export class Recreationists extends Scene {
         G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.grass: G.materials.pure);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
-            .times(Mat4.translation(0, -180, 0.01))
+            .times(Mat4.translation(0, 180, 0.01))
             .times(Mat4.scale(80, 60, .1));
         G.shapes.cube.draw(context, program_state, model_transform, shadow ? this.materials.grass : G.materials.pure);
 
