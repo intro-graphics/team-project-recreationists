@@ -1506,6 +1506,11 @@ class Player {
         this.rocking_angle=Math.PI/24*Math.sin(2*Math.PI*1/1*this.rocking_time);
         this.rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*this.rocking_time);
         */
+        //this.rocking_time+=program_state.animation_delta_time/1000;
+        this.rocking_time = program_state.animation_time/1000;
+        this.rocking_angle=Math.PI/24*Math.sin(2*Math.PI*1/1*this.rocking_time);
+        this.rocking_angle2=Math.PI/24*Math.cos(2*Math.PI*1/1*this.rocking_time);
+
         // assume this is a remote player
         if (this.socket_id !== G.player_id) {
             let pos = G.remote_data[this.socket_id];
@@ -1810,11 +1815,12 @@ class LocalPlayer extends Player {
             //.times(Mat4.rotation(Math.PI/4,0,0,0))
         );
         program_state.set_camera(this.camera_matrix);
-
+        /*
         // tell the server our position
         G.socket.emit('update', {
             player_matrix: this.player_matrix,
         })
+        */
     }
 
     draw(context, program_state, shadow) {
@@ -1943,6 +1949,11 @@ class LocalPlayer extends Player {
                                                  .times(Mat4.translation(0,-2,0));
 
 
+
+        // tell the server our position (put this here so the backflips replicate)
+        G.socket.emit('update', {
+            player_matrix: this.player_matrix,
+        })
 
          // Undo the forward flip rotation
          this.player_matrix=this.player_matrix.times(Mat4.translation(0,0.75,0));
