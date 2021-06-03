@@ -490,7 +490,7 @@ export class Recreationists extends Scene {
             new Light(
                 this.light_position,
                 light_color,
-                10 ** 3
+                10 ** radius
             )
         ];
 
@@ -504,8 +504,8 @@ export class Recreationists extends Scene {
             vec3(light_view_target[0], light_view_target[1], light_view_target[2]),
             vec3(0, 1, 0), // assume the light to target will have a up dir of +y
         );
-        const light_field_of_view = 130 * Math.PI / 180;
-        const light_proj_mat = Mat4.perspective(light_field_of_view, 1, 0.5, 500);
+        const light_field_of_view = 160 * Math.PI / 180;
+        const light_proj_mat = Mat4.perspective(light_field_of_view, 1, 0.5, 2000);
         // Bind the Depth Texture Buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
         gl.viewport(0, 0, this.lightDepthTextureSize, this.lightDepthTextureSize);
@@ -522,7 +522,7 @@ export class Recreationists extends Scene {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         program_state.view_mat = program_state.camera_inverse;
-        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.5, 500);
+        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.5, 2000);
         this.render(context, program_state, model_transform, true);
 
         // update game
