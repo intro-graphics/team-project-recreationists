@@ -1,6 +1,30 @@
+
+
+# Report
+
+Group Members: Bella Calvet, John Houser, Yuhan Liu, Jorge Contreras
+
+Our goal with this project was to recreate the area of campus between Royce Hall and Powell Library. We know that many of us aren't on campus, so we thought it would be cool if we create a virtual version that would allow users to see each other on this virtual campus. In order to accomplish this, we implemented a node.js express server and created a website that would allow visitors to see eachother move in the world. This feature is not graphics related, so we also pursued five advanced features...
+![Advanced features and responsbilities](assets/3slide.png)
+Here is a breakdown of each of our features:
+![The Objects/Buildings](assets/15slide.png)
+![The Objects/Buildings](assets/16slide.png)
+![Powel Library and Humanities](assets/8slide.png)
+![Royce Hall and Haines Hall](assets/9slide.png)
+![Shadows/Lighting](assets/6slide.png)
+![Shadows/Lighting](assets/7slide.png)
+![Collision detection](assets/4slide.png)
+![Collision detection](assets/17slide.png)
+![Collision detection](assets/14slide.png)
+![Animation](assets/11slide.png)
+![Animation](assets/12slide.png)
+![Animation](assets/13slide.png)
+![Textures](assets/5slide.png)
+
 # How to run the code (node.js express server)
 Our project implements a node.js express server that allows players to interact with eachother:
-![](assets/2slide.png)
+![An image containing multiple players in the world](assets/2slide.png)
+In order to run the code you must follow the following steps...
 
 1) git clone/pull this repo 
 2) enter the team-project-recreationists folder
@@ -8,35 +32,4 @@ Our project implements a node.js express server that allows players to interact 
 4) type 'node index.js'
 5) visit localhost:5000
 
-if there are any problems following these steps reach out to me on discord.
-
-# tiny-graphics.js
-
-This is a small, single file JavaScript utility.  It organizes WebGL programs to be object-oriented and minimally cluttered.  
-
-Writing code with raw JavaScript and WebGL can be repetitive and tedious.  Using frameworks like three.js can create an undesired separation between you and the raw JavaScript and WebGL and common graphics operations you want to learn.  Unlike other frameworks, tiny-graphics.js is purpose-built for education, has small source code, and teaches you how it is made.
-
-This tiny library gives your WebGL program access to linear algebra routines, useful UI controls and readouts, and the drawing utilities needed by modern shader-based graphics.  It factors away the repetitive logic of GPU communication into re-usable objects.  The objects can be seamlessly shared between multiple WebGL contexts (drawing regions) on a web page.
-
-The tiny-graphics.js software library has accompanied UCLA Computer Science's 174a course (Intro to Computer Graphics) since 2016, replacing Edward Angel's supplemental code from his textbook "Interactive Computer Graphics: A Top-Down Approach with WebGL".  Compared to Angel's library, tiny-graphics.js offers more organization and functionality.
-
-This code library accompanies and supports a web project by the same author called "The Encyclopedia of Code", a crowd-sourced repository of WebGL demos and educational tutorials that uses an online editor.
-
-To run a sample using tiny-graphics.js, visit its GitHub Pages link: https://encyclopedia-of-code.github.io/tiny-graphics-js/
-
-To see all the demos and edit them:  Open the included "host.bat" or "host.command" file, then open localhost in your browser.  Open Developer Tools and create a workspace for your new folder.  Now you can edit the files, which is necessary to view the different demos.
-
-To select a demo, open and edit main-scene.js.  Assign your choice to the Main_Scene variable.  Your choices for scenes are:
-
-* Minimal_Webgl_Demo
-* Transforms_Sandbox
-* Axes_Viewer_Test_Scene
-* Inertia_Demo
-* Collision_Demo
-* Many_Lights_Demo
-* Obj_File_Demo
-* Text_Demo
-* Scene_To_Texture_Demo
-* Surfaces_Demo
-
-The code comments in each file should help, especially if you look at the definition of Transforms_Sandbox.  So should the explanations that the demos print on the page.  Enjoy!
+And you can see the world we've created!
