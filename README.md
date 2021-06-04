@@ -4,7 +4,7 @@
 
 Group Members: Bella Calvet, John Houser, Yuhan Liu, Jorge Contreras
 
-Our goal with this project was to recreate the area of campus between Royce Hall and Powell Library. We know that many of us aren't on campus, so we thought it would be cool if we create a virtual version that would allow users to see each other on this virtual campus. In order to accomplish this, we implemented a node.js express server and created a website that would allow visitors to see eachother move in the world. This feature is not graphics related, so we also pursued five advanced features...
+Our goal with this project was to recreate the area of campus between Royce Hall and Powell Library. We know that many of us aren't on campus, so we thought it would be cool if we created a virtual version that would allow users to see each other on this virtual campus. In order to accomplish this, we implemented a node.js express server and created a website that would allow visitors to see eachother move in the world. This feature is not graphics related, so we also pursued five advanced features...
 ![Advanced features and responsbilities](assets/3slide.png)
 Here is a breakdown of each of our features:
 ![The Objects/Buildings](assets/15slide.png)
