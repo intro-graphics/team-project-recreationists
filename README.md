@@ -21,6 +21,9 @@ Here is a breakdown of each of our features:
 ![Animation](assets/13slide.png)
 ![Textures](assets/5slide.png)
 
+References:
+We used code from examples (Collision Detection, Textures) included in the tiny graphics library. We also used the TA's shadow code.
+
 # How to run the code (node.js express server)
 Our project implements a node.js express server that allows players to interact with eachother:
 ![An image containing multiple players in the world](assets/2slide.png)
