@@ -1,6 +1,6 @@
-# how to test your code with the server (should be easy)
-
-Instead of the usual way we see our actual objects, refer to the following steps:
+# How to run the code (node.js express server)
+Our project implements a node.js express server that allows players to interact with eachother:
+![](assets/2slide.png)
 
 1) git clone/pull this repo 
 2) enter the team-project-recreationists folder
