@@ -8,8 +8,10 @@ import {
 } from './shadow-shaders.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
+
+const { Textured_Phong } = defs;
 
 const TextureSquare =
     class Square extends tiny.Vertex_Buffer {
@@ -289,7 +291,7 @@ class G {
     static materials = {
         player: new Material(new Shadow_Textured_Phong_Shader(),
             {
-                ambient: .1,
+                ambient: .7,
                 diffusivity: .9,
                 color: hex_color("#ffffff"),
                 color_texture: null,
@@ -326,7 +328,8 @@ class G {
             color: color(0, 0, .0, 1),
             ambient: 1, diffusivity: 0, specularity: 0, texture: null
         }),
-        pure: new Material(new Color_Phong_Shader(), {}),
+        
+        pure: new Material(new Color_Phong_Shader(), {ambient: .7, diffusivity: 1}),
     };
     // all of the data from other clients (dictionary, socketid to player info)
     static remote_data = {};
@@ -373,6 +376,8 @@ class G {
     static hide_my_player = false;
 
     static hide_other_players = false;
+
+    static slides; // slides instance
 }
 
 
@@ -448,6 +453,8 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Hide my player", ["Shift", "U"], () => G.hide_my_player = !G.hide_my_player);
         this.key_triggered_button("Toggle day-night cycle", ["Shift", "P"], () => this.day_night_cycle = !this.day_night_cycle);
         this.key_triggered_button("Toggle shadow", ["Shift", "O"], () => this.shadow_demo = !this.shadow_demo)
+        this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
+        this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
     }
 
     texture_buffer_init(gl) {
@@ -975,6 +982,13 @@ class Game {
         //flagpole
         this.entities.push(new Flagpole());
 
+        //Slides instance
+        G.slides = new Slides();
+        this.entities.push(G.slides);
+
+        //Target instance
+        this.entities.push(new Target(0, 0.05, -60));
+
         let local_player = new LocalPlayer();
         this.entities.push(local_player);
 
@@ -1040,6 +1054,105 @@ class Game {
                 //points.draw(context, program_state, b.drawn_location.times(Mat4.scale(...size)));
 
         }
+    }
+}
+
+// The target on the ground
+class Target {
+    constructor(x,y,z) {
+        /*
+        fetch('https://docs.google.com/presentation/d/1AVBgakFxnAVCK56Huu8QCWpZHfhY6XN_i2VtU2xGFrE/edit?usp=sharing.json')
+        .then(response => response.json())
+        .then(data => console.log(data));
+        */
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.images = [
+            new Material(new Textured_Phong(), {
+            color: hex_color("#000000"),
+            ambient: 1, diffusivity: 0.0, specularity: 0.0,
+            texture: new Texture("assets/target_transparent.png") })
+        ];
+        this.current_image = 0;
+    }
+
+ 
+    update(context, program_state) {
+
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity()
+            .times(Mat4.translation(this.x, this.y, this.z))
+            .times(Mat4.rotation(Math.PI/2, 0, 0, 1))
+            .times(Mat4.scale(0.1, 2, 2))
+            
+            ;
+            
+        //G.shapes.cube.draw(context, program_state, model_transform, G.materials.pure.override({color: color(1, 1, 1, 0)}));
+
+        G.shapes.cube.draw(context, program_state, model_transform, this.images[this.current_image]);//G.materials.pure.override({color: color(1, 1, 1, 1.0)}));
+        //G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[0]}) : G.materials.pure.override({color:this.colorArray[0]}));
+
+    }
+}
+
+// The slides that we use in game
+class Slides {
+    constructor() {
+        /*
+        fetch('https://docs.google.com/presentation/d/1AVBgakFxnAVCK56Huu8QCWpZHfhY6XN_i2VtU2xGFrE/edit?usp=sharing.json')
+        .then(response => response.json())
+        .then(data => console.log(data));
+        */
+
+        this.images = [
+            
+        ];
+        let i = 0;
+        for (i = 1; i < 19; i++) {
+            this.images.push(
+                new Material(new Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/" + i + "slide.png") 
+                })
+            );
+        }
+
+        this.current_image = 0;
+    }
+
+    next_slide() {
+        if (this.images.length - 1 <= this.current_image) {
+            this.current_image = 0;
+        } else {
+            this.current_image += 1;
+        }
+    }
+
+    prev_slide() {
+        if (0 >= this.current_image) {
+            this.current_image = this.images.length-1;
+        } else {
+            this.current_image -= 1;
+        }
+    }
+
+    update(context, program_state) {
+
+    }
+
+    draw(context, program_state, shadow) {
+        let model_transform = Mat4.identity().times(Mat4.translation(-60, 10, -70))
+            .times(Mat4.scale(0.1, 10, 10));
+            
+        //G.shapes.cube.draw(context, program_state, model_transform, G.materials.pure.override({color: color(1, 1, 1, 0)}));
+
+        G.shapes.cube.draw(context, program_state, model_transform, this.images[this.current_image]);//G.materials.pure.override({color: color(1, 1, 1, 1.0)}));
+        //G.shapes.cube.draw(context, program_state, this.player_matrix, shadow ? G.materials.player.override({color:this.colorArray[0]}) : G.materials.pure.override({color:this.colorArray[0]}));
+
     }
 }
 
