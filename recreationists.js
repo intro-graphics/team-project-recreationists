@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import { Articulated_Player } from './player-model.js';
 import {
     Buffered_Texture,
     Color_Phong_Shader,
@@ -1747,6 +1748,7 @@ class Player {
                                             .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 200 - 100))
                                             //.times(Mat4.scale(1, 2, 1))
                                             ;
+        this.player_model = new Articulated_Player(this.player_matrix);
         this.socket_id = socket_id;
         this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
@@ -2085,6 +2087,7 @@ class LocalPlayer extends Player {
             player_matrix: this.player_matrix,
         })
         */
+        //this.player_model.update(this.player_matrix);
     }
 
     draw(context, program_state, shadow) {
@@ -2212,7 +2215,11 @@ class LocalPlayer extends Player {
                                                  .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
 
-
+            //now debug human model first 
+            this.player_model.set_color(this.colorArray[0],this.colorArray[3], this.colorArray[1], this.colorArray[2]);
+            this.player_model.draw(context, program_state, 
+                shadow ? G.materials.player : G.materials.pure);
+            
 
         // tell the server our position (put this here so the backflips replicate)
         G.socket.emit('update', {
