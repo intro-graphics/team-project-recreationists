@@ -6,6 +6,7 @@ import {
     LIGHT_DEPTH_TEX_SIZE,
     Shadow_Textured_Phong_Shader
 } from './shadow-shaders.js';
+import { Hermite_Spline, Curve_Shape } from './spline.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -378,6 +379,8 @@ class G {
     static hide_other_players = false;
 
     static slides; // slides instance
+    
+    static show_curve=false;
 }
 
 class Simulation {
@@ -579,6 +582,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Toggle shadow", ["Shift", "O"], () => this.shadow_demo = !this.shadow_demo)
         this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
         this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
+        this.key_triggered_button("Show Spline Curve", ["Shift", "C"], () => G.show_curve = !G.show_curve);
     }
 
     texture_buffer_init(gl) {
@@ -1122,6 +1126,9 @@ class Game {
 
         //flagpole
         this.entities.push(new Flagpole());
+
+        //Attempt
+        this.entities.push(new Birdy())
 
         //Slides instance
         G.slides = new Slides();
@@ -1727,6 +1734,150 @@ class Fountain {
         G.shapes.cube.draw(context, program_state, model_transform, G.materials.whiteSquare.override({color: hex_color("#0000FF")}));
     }
 }
+
+
+//Bird
+class Birdy extends Shape {
+    constructor(){
+        super( "position", "normal", "texture_coord" );
+        
+        //colors
+        this.color1=color(Math.random(),Math.random(),Math.random(),1);
+        this.color2=color(Math.random(),Math.random(),Math.random(),1);
+        this.color3=color(Math.random(),Math.random(),Math.random(),1);
+        this.color4=color(Math.random(),Math.random(),Math.random(),1);
+        this.yellow=color( 1,0.7,0,1 );
+
+        //arrays
+        this.points = [];
+        this.curves = [];
+
+        //variables
+        this.sample_count = 10;
+        this.step=0;
+        this.curve_step=0;
+
+
+        //spline
+        this.spline = new Hermite_Spline(this.sample_count);
+
+        //populating spline
+        this.spline.add_point(0.0, 5.0, 0.0,-5.0,0.0,5.0);
+        this.spline.add_point(0.0, 10.0, 5.0,-5.0,0.0,5.0);
+        this.spline.add_point(5.0, 5.0, 5.0,-5.0,0.0,5.0);
+        this.spline.add_point(5.0, 10.0, 0.0,-5.0,0.0,5.0);
+        this.spline.add_point(0.0, 5.0, 0.0,-5.0,0.0,5.0);
+
+        for (let p of this.spline.points) {
+         this.points.push(p);
+        }
+         for (let c of this.spline.curve_fns) {
+         // console.log(c(2));
+             this.curves.push(new Curve_Shape(c, this.sample_count));
+    }
+
+      
+    }
+  
+    draw(context, program_state, shadow ) {
+        
+      //main body
+
+      //to draw the curve
+      if (G.show_curve){
+        for (let c of this.curves) {
+       
+            c.draw(context, program_state);
+        }
+      }
+      
+      let model_transform=Mat4.translation(0,10,0);
+
+      let prev_step=0;
+
+      if (this.step <this.sample_count){
+          prev_step=this.step;
+          this.step +=0.05;
+      }
+      if (this.step >=this.sample_count){
+          this.step=0;
+          prev_step=0
+          this.curve_step +=1;
+      }
+      if (this.curve_step > (this.spline.num_points-2)){
+        this.curve_step=0;
+        //this.step=0;
+      }
+      if (this.spline.num_points >0){
+        let fn= this.spline.curve_fns[this.curve_step];
+    
+        let pos = fn(this.step/this.sample_count);
+          
+        //need to fix rotation to follow along the curve. Not Hundre percent sure of this
+        model_transform= Mat4.translation(pos[0],pos[1],pos[2])
+              .times(Mat4.rotation(180,0,-1,0,))
+              .times(Mat4.scale(0.5,0.5,0.5));
+              
+  
+      }
+
+
+
+      let main_body_transform=model_transform
+                          .times(Mat4.scale(0.5,0.4,1));
+      G.shapes.sphere.draw(context, program_state, main_body_transform, {...G.materials.brick_stairs,color:this.color1});
+  
+      //head
+      let head_transform=model_transform
+                          .times(Mat4.translation(0,0.35,1.2))
+                          .times(Mat4.rotation(60,-1,0,0))
+                          .times(Mat4.scale(0.25,0.30,0.5));
+      G.shapes.sphere.draw(context, program_state, head_transform, {...G.materials.brick_stairs,color:this.color2});
+      
+      //beak
+      let beak_transform=model_transform
+                          .times(Mat4.translation(0,0.35,1.8))
+                          //.times(Mat4.rotation(60,-1,0,0))
+                          .times(Mat4.scale(0.1,0.1,0.4));
+                          
+      G.shapes.cone.draw(context, program_state, beak_transform, {...G.materials.brick_stairs,color:this.yellow});
+    
+      //right wing
+      let rocking_angle=Math.PI/13*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
+      let theta=Math.PI/9;
+      let right_wing_transform=model_transform
+                          .times(Mat4.translation(-1.1,0.2,0.2))
+                          .times(Mat4.rotation(rocking_angle,0,0,1))
+                          .times(Mat4.scale(1,0.1,0.3));
+      G.shapes.sphere.draw(context, program_state, right_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+  
+      //left wing
+      let left_wing_transform=model_transform
+      .times(Mat4.translation(1.1,0.2,0.2))
+      .times(Mat4.rotation(-rocking_angle,0,0,1))
+      .times(Mat4.scale(1,0.1,0.3));
+    G.shapes.sphere.draw(context, program_state, left_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+        
+  
+        //tail
+        let  tail_transform=model_transform
+        .times(Mat4.translation(0,-0.1,-1.2))
+        .times(Mat4.rotation(49.9,1,0,0))
+        .times(Mat4.scale(0.1,0.05,0.6));
+      G.shapes.sphere.draw(context, program_state, tail_transform, {...G.materials.brick_stairs,color:this.color4});
+        let tail_transform2=tail_transform
+        .times(Mat4.translation(1,-1,0));
+        G.shapes.sphere.draw(context, program_state, tail_transform2,{...G.materials.brick_stairs,color:this.color4});
+        let tail_transform3=tail_transform
+        .times(Mat4.translation(-1,-1,0));
+        G.shapes.sphere.draw(context, program_state, tail_transform3, {...G.materials.brick_stairs,color:this.color4});
+      
+      }
+      update(context, program_state) {
+        
+    }
+    }
+
 
 // This is a general player. It is used to make adding new players easy. Use local player for the player
 // that you actually control in the game.
