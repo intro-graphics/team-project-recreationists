@@ -3,6 +3,8 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
+const DEFAULT_SHOULDER_RZ = 1.2;
+
 export const Articulated_Player = 
 class Articulated_Player{
     constructor(player_matrix){
@@ -87,34 +89,68 @@ class Articulated_Player{
         this.l_knee = new Arc("r_knee", this.lu_leg_node, this.ll_leg_node, l_knee_location);
         this.lu_leg_node.children_arcs.push(this.l_knee);
 
-        this.dof = Matrix.of([0], //root_x
-                             [0], //root_y 
-                             [0], //root_z
-                             [0], //neck_rx
-                             [0], //neck_ry 
-                             [0], //neck_rz
-                             [0], //r_shoulder_rx
-                             [0], //r_shoulder_ry
-                             [-1.2], //r_shoulder_rz
-                             [0], //r_elbow_rx
-                             [0], //r_elbow_ry
-                             [0], //r_hip
-                             [0], //r_knee
-                             [0], //l_shoulder_rx
-                             [0], //l_shoulder_ry
-                             [1.2], //l_shoulder_rz
-                             [0], //l_elbow_rx
-                             [0], //l_elbow_ry
-                             [0], //l_hip
-                             [0], //l_knee
-                             [0]  // root_rx for flipping 
+        this.dof = Matrix.of([0], //0//root_x 
+                             [0], //1//root_y 
+                             [0], //2//root_z 
+                             [0], //3//neck_rx
+                             [0], //4//neck_ry 
+                             [0], //5//neck_rz
+                             [0], //6//r_shoulder_rx
+                             [0], //7//r_shoulder_ry
+                             [-DEFAULT_SHOULDER_RZ], //8//r_shoulder_rz
+                             [0], //9//r_elbow_rx
+                             [0], //10//r_elbow_ry
+                             [0], //11//r_hip
+                             [0], //12//r_knee
+                             [0], //13//l_shoulder_rx
+                             [0], //14//l_shoulder_ry
+                             [DEFAULT_SHOULDER_RZ], //15//l_shoulder_rz
+                             [0], //16//l_elbow_rx
+                             [0], //17//l_elbow_ry
+                             [0], //18//l_hip
+                             [0], //19//l_knee
+                             [0]  //20// root_rx for flipping 
                              );
+        //state 
+        this.is_walking = false;
+        this.walking_time = 0;
+        this.is_waving = false; 
     }
 
-    //temporary update function for debugging 
-    update(player_matrix){
+    //update player model 
+    update(player_matrix, program_state){
+        this._fk_update(program_state);
         this._set_dof();
         this.root.location_matrix = player_matrix.times(Mat4.translation(0, 0.75, 0));
+    }
+
+    _fk_update(program_state){
+        let dt = program_state.animation_delta_time/1000;
+        let t = program_state.animation_time/1000;
+        //walking animation
+        if(this.is_walking){
+            this.walking_time+=dt*10;
+            //create a function for the joint angle of arm 
+            let rx = Math.sin(this.walking_time);
+            this.dof[7][0] = rx; //right shoulder rx
+            this.dof[14][0] = rx; //left shoulder rx
+            this.dof[11][0] = rx; //right hip rx
+            this.dof[18][0] = -rx; //left hip rx
+        }else{ //not walking 
+            this.walking_time = 0;
+            this.dof[7][0] = 0; //right shoulder
+            this.dof[14][0] = 0; //left shoulder
+            this.dof[11][0] = 0; //right hip rx
+            this.dof[18][0] = 0; //left hip rx
+            //settle movement of arm at rest 
+            this.dof[8][0] = -DEFAULT_SHOULDER_RZ + 1/30*Math.sin(t*2); //r_shoulder_rz
+            this.dof[15][0] = DEFAULT_SHOULDER_RZ - 1/30*Math.sin(t*2); //l_shoulder_rz
+        }
+    }
+
+    _ik_update(program_state){
+        let dt = program_state.animation_delta_time/1000;
+        let t = program_state.animation_time/1000;
     }
 
     _set_dof(){

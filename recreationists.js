@@ -1786,6 +1786,14 @@ class LocalPlayer extends Player {
         let z = this.player_matrix[2];
 
         //console.log(x,y,z);
+
+        //check if player is walking 
+        if((G.controls.w || G.controls.a || G.controls.s || G.controls.d) && !this.jumping){
+            this.player_model.is_walking = true;
+        }else{
+            this.player_model.is_walking = false;
+        }
+
         this.velocity[2] = 0; // don't move unless button pressed
         if (G.controls.w === true) {
             G.key_was_pressed = true;
@@ -1936,7 +1944,7 @@ class LocalPlayer extends Player {
             player_matrix: this.player_matrix,
         })
         */
-        this.player_model.update(this.player_matrix);
+        this.player_model.update(this.player_matrix, program_state);
     }
 
     draw(context, program_state, shadow) {
