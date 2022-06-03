@@ -12,7 +12,7 @@ class Articulated_Player{
         let torso_transform = Mat4.scale(0.6,0.75,0.3);
         this.torso_node = new Node("torso", square_shape, torso_transform);
         // root -> torso
-        let root_location = Mat4.translation(0, 2, 0);
+        let root_location = player_matrix.times(Mat4.translation(0, 0.75, 0));
         this.root = new Arc("root", null, this.torso_node, root_location);
 
         //head node
@@ -86,11 +86,58 @@ class Articulated_Player{
         let l_knee_location = Mat4.translation(0, -0.6, 0);
         this.l_knee = new Arc("r_knee", this.lu_leg_node, this.ll_leg_node, l_knee_location);
         this.lu_leg_node.children_arcs.push(this.l_knee);
+
+        this.dof = Matrix.of([0], //root_x
+                             [0], //root_y 
+                             [0], //root_z
+                             [0], //neck_rx
+                             [0], //neck_ry 
+                             [0], //neck_rz
+                             [0], //r_shoulder_rx
+                             [0], //r_shoulder_ry
+                             [-1.2], //r_shoulder_rz
+                             [0], //r_elbow_rx
+                             [0], //r_elbow_ry
+                             [0], //r_hip
+                             [0], //r_knee
+                             [0], //l_shoulder_rx
+                             [0], //l_shoulder_ry
+                             [1.2], //l_shoulder_rz
+                             [0], //l_elbow_rx
+                             [0], //l_elbow_ry
+                             [0], //l_hip
+                             [0], //l_knee
+                             [0]  // root_rx for flipping 
+                             );
     }
 
     //temporary update function for debugging 
     update(player_matrix){
-        
+        this._set_dof();
+        this.root.location_matrix = player_matrix.times(Mat4.translation(0, 0.75, 0));
+    }
+
+    _set_dof(){
+       this.root.articulation_matrix = this._get_translate_mat(this.dof[0][0], this.dof[1][0], this.dof[2][0]).times(this._get_rotation_mat(this.dof[20]));
+       this.neck.articulation_matrix = this._get_rotation_mat(this.dof[3][0], this.dof[4][0], this.dof[5][0]);
+       this.r_shoulder.articulation_matrix = this._get_rotation_mat(this.dof[6][0], this.dof[7][0], this.dof[8][0]);
+       this.r_elbow.articulation_matrix = this._get_rotation_mat(this.dof[9][0], this.dof[10][0]);
+       this.r_hip.articulation_matrix = this._get_rotation_mat(this.dof[11][0]);
+       this.r_knee.articulation_matrix = this._get_rotation_mat(this.dof[12][0]);
+       this.l_shoulder.articulation_matrix = this._get_rotation_mat(this.dof[13][0], this.dof[14][0], this.dof[15][0]);
+       this.l_elbow.articulation_matrix = this._get_rotation_mat(this.dof[16][0], this.dof[17][0]);
+       this.l_hip.articulation_matrix = this._get_rotation_mat(this.dof[18][0]);
+       this.l_knee = this._get_rotation_mat(this.dof[19][0]);
+    }
+
+    _get_translate_mat(x, y, z){
+        return Mat4.translation(x, y, z);
+    }
+
+    _get_rotation_mat(rx, ry = 0, rz = 0){
+        return Mat4.rotation(rz, 0, 0, 1)
+              .times(Mat4.rotation(ry, 0, 1, 0))
+              .times(Mat4.rotation(rx, 1, 0, 0));
     }
 
     set_color(torso_color, head_color, leg_color, arm_color){
@@ -132,11 +179,6 @@ class Articulated_Player{
         }
     }
 }
-
-
-
-
-
 
 class Node {
     constructor(name, shape, transform) {
