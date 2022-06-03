@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import { Articulated_Player } from './player-model.js';
 import {
     Buffered_Texture,
     Color_Phong_Shader,
@@ -355,6 +356,7 @@ class G {
         // shift: false,
         // a: false,
         // s: false
+        f: false
     };
 
     // if any key was pressed (used for initial camera)
@@ -583,6 +585,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
         this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
         this.key_triggered_button("Show Spline Curve", ["Shift", "C"], () => G.show_curve = !G.show_curve);
+        //this.key_triggered_button("Wave hand", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
     }
 
     texture_buffer_init(gl) {
@@ -1888,6 +1891,7 @@ class Player {
                                             .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 200 - 100))
                                             //.times(Mat4.scale(1, 2, 1))
                                             ;
+        this.player_model = new Articulated_Player(this.player_matrix);
         this.socket_id = socket_id;
         this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
@@ -2076,6 +2080,14 @@ class LocalPlayer extends Player {
         let z = this.player_matrix[2];
 
         //console.log(x,y,z);
+
+        //check if player is walking 
+        if((G.controls.w || G.controls.a || G.controls.s || G.controls.d) && !this.jumping){
+            this.player_model.is_walking = true;
+        }else{
+            this.player_model.is_walking = false;
+        }
+
         this.velocity[2] = 0; // don't move unless button pressed
         if (G.controls.w === true) {
             G.key_was_pressed = true;
@@ -2115,6 +2127,12 @@ class LocalPlayer extends Player {
                 //console.log("m pressed");
                 this.apply_force([0, 9.8 * 0.02, 0]);
             }
+        }
+
+        if(G.controls.f === true){
+            G.key_was_pressed = true;
+            this.player_model.is_waving = true;
+            this.player_model.set_wave_fn(this.player_model._get_current_end_effector_loc());
         }
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
         //program_state.set_camera(desired);
@@ -2240,6 +2258,7 @@ class LocalPlayer extends Player {
             player_matrix: this.player_matrix,
         })
         */
+        this.player_model.update(this.player_matrix, program_state);
     }
 
     draw(context, program_state, shadow) {
@@ -2285,6 +2304,7 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.rotation(this.flip_angle,1,0,0));
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,-0.75,0));
 
+            /*
             // The  player_matrix coordinates origin (0,0,0) will represent the bottom-middle of the upper body
             // First draw the upper body as a 1.2x1.5x0.6 rectangle centered at (0, 0.75, 0)
             // Upper Body:
@@ -2366,8 +2386,13 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.5,1/0.5,1/0.5))
                                                  .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
-
-
+            */
+            //now debug human model first 
+            this.player_model.dof[20][0] = this.flip_angle;
+            this.player_model.set_color(this.colorArray[0],this.colorArray[3], this.colorArray[1], this.colorArray[2]);
+            this.player_model.draw(context, program_state, 
+                shadow ? G.materials.player : G.materials.pure);
+            
 
         // tell the server our position (put this here so the backflips replicate)
         G.socket.emit('update', {
