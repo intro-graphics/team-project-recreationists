@@ -2087,7 +2087,7 @@ class LocalPlayer extends Player {
             player_matrix: this.player_matrix,
         })
         */
-        //this.player_model.update(this.player_matrix);
+        this.player_model.update(this.player_matrix);
     }
 
     draw(context, program_state, shadow) {
@@ -2133,6 +2133,7 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.rotation(this.flip_angle,1,0,0));
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,-0.75,0));
 
+            /*
             // The  player_matrix coordinates origin (0,0,0) will represent the bottom-middle of the upper body
             // First draw the upper body as a 1.2x1.5x0.6 rectangle centered at (0, 0.75, 0)
             // Upper Body:
@@ -2214,8 +2215,9 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.5,1/0.5,1/0.5))
                                                  .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
-
+            */
             //now debug human model first 
+            this.player_model.dof[20][0] = this.flip_angle;
             this.player_model.set_color(this.colorArray[0],this.colorArray[3], this.colorArray[1], this.colorArray[2]);
             this.player_model.draw(context, program_state, 
                 shadow ? G.materials.player : G.materials.pure);
