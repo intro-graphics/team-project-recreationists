@@ -1,10 +1,15 @@
 import {defs, tiny} from './examples/common.js';
 import { Particles_Emitter } from './particle.js';
+import { psuedo_inverse } from './inverse-jacobian.js';
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 const DEFAULT_SHOULDER_RZ = 1.2;
+const DDOF = 0.0001 // for Jacobian numerial solution 
+const EPSILON = 0.001 // for IK conversion
+const MAX_ITERATION = 50 // max iteration for IK in case it does not converge small enough
+const STEP_FACTOR = 0.1 //step factor 
 
 export const Articulated_Player = 
 class Articulated_Player{
@@ -113,18 +118,32 @@ class Articulated_Player{
                              [0]  //20// root_rx for flipping 
                              );
         //state 
+        this.end_effector_loc = this._get_current_end_effector_loc();
         this.is_walking = false;
         this.walking_time = 0;
         this.is_waving = false;
+        this.waving_time = 0;
+        this.wave_curve_fn = null;
         // particle while moving 
         this.particles_emitter = new Particles_Emitter(1.5, 0.1, 0.2, vec4(220/255, 198/255, 152/255, 1.0), 3, 1, 3, false);
+    }
+
+    set_wave_fn(){
+
     }
 
     //update player model 
     update(player_matrix, program_state){
         this._fk_update(player_matrix, program_state);
+        if(this.is_waving){
+
+            this._ik_update(this.end_effector_loc);
+        }
         this._set_dof();
+        //player location update 
         this.root.location_matrix = player_matrix.times(Mat4.translation(0, 0.75, 0));
+        //current end effector location update 
+        this.end_effector_loc = this._get_current_end_effector_loc();
     }
 
     _fk_update(player_matrix, program_state){
@@ -132,7 +151,8 @@ class Articulated_Player{
         let t = program_state.animation_time/1000;
         //walking animation
         if(this.is_walking){
-            this.particles_emitter.add_particles(player_matrix.times(Mat4.translation(0, -1, 0)));
+            this.is_waving = false; //walking terminates the waving animation 
+            this.particles_emitter.add_particles(player_matrix.times(Mat4.translation(0, -0.9, 0)));
             this.walking_time+=dt*10;
             //create a function for the joint angle of arm 
             let rx = Math.sin(this.walking_time);
@@ -140,9 +160,13 @@ class Articulated_Player{
             this.dof[14][0] = rx; //left shoulder rx
             this.dof[11][0] = rx; //right hip rx
             this.dof[18][0] = -rx; //left hip rx
-        }else{ //not walking 
+        }else if(!this.is_waving){ //not walking 
             this.walking_time = 0;
+            this.dof[6][0] = 0; //right shoulder
             this.dof[7][0] = 0; //right shoulder
+            this.dof[8][0] = 0; //right shoulder
+            this.dof[9][0] = 0; //right wrisp 
+            this.dof[10][0] = 0; //right wrisp 
             this.dof[14][0] = 0; //left shoulder
             this.dof[11][0] = 0; //right hip rx
             this.dof[18][0] = 0; //left hip rx
@@ -155,9 +179,68 @@ class Articulated_Player{
         }
     }
 
-    _ik_update(program_state){
-        let dt = program_state.animation_delta_time/1000;
-        let t = program_state.animation_time/1000;
+    _ik_update(target_loc){ //for right hand waving 
+        let error = target_loc.minus(this.end_effector_loc).norm();
+        let iteration_count = 0;
+        while(error > EPSILON && iteration_count < MAX_ITERATION){
+            //step size 
+            let delta_x = target_loc.minus(this.end_effector_loc).times(STEP_FACTOR);
+            let mat_delta_x = Matrix.of([delta_x[0]], [delta_x[1]], [delta_x[2]]);
+            //compute J
+            let j = this._compute_jacobian();
+            //compute psuedo inverse of J, if not invertable use transpose method
+            let j_psuedoinv = psuedo_inverse(j);
+            // compute delta DOF
+            let delta_dof = j_psuedoinv.times(mat_delta_x);
+            // apply changes to human model 
+            this.dof = this.dof.plus(delta_dof) //update joint step 1
+            this.end_effector_loc = this._get_current_end_effector_loc(); //update end_effector_loc
+            error = target_loc.minus(this.end_effector_loc).norm(); //update error 
+            iteration_count++;
+        }
+    }
+
+    _compute_jacobian(){ //only use r_shoulder and r_elbow dofs for right hand end effector 
+        //r_shoulder
+        let r_shoulder_arc_mat = this._get_rotation_mat(this.dof[6][0]+DDOF, this.dof[7][0], this.dof[8][0]);
+        let r_shoulder_rx_col = this._get_end_effector_loc(this.root.articulation_matrix,
+                                                           r_shoulder_arc_mat,
+                                                           this.r_elbow.articulation_matrix).minus(this.end_effector_loc).times(1/DDOF);
+        r_shoulder_arc_mat = this._get_rotation_mat(this.dof[6][0], this.dof[7][0]+DDOF, this.dof[8][0]);
+        let r_shoulder_ry_col = this._get_end_effector_loc(this.root.articulation_matrix,
+                                                           r_shoulder_arc_mat,
+                                                           this.r_elbow.articulation_matrix).minus(this.end_effector_loc).times(1/DDOF);
+        r_shoulder_arc_mat = this._get_rotation_mat(this.dof[6][0], this.dof[7][0], this.dof[8][0]+DDOF);
+        let r_shoulder_rz_col = this._get_end_effector_loc(this.root.articulation_matrix,
+                                                           r_shoulder_arc_mat,
+                                                           this.r_elbow.articulation_matrix).minus(this.end_effector_loc).times(1/DDOF);
+        //r_elbow 
+        let r_elbow_arc_mat = this._get_rotation_mat(this.dof[9][0] + DDOF, this.dof[10][0]);
+        let r_elbow_rx_col = this._get_end_effector_loc(this.root.articulation_matrix,
+                                                        this.r_shoulder.articulation_matrix,
+                                                        r_elbow_arc_mat).minus(this.end_effector_loc).times(1/DDOF);
+        r_elbow_arc_mat = this._get_rotation_mat(this.dof[9][0], this.dof[10][0]+DDOF);
+        let r_elbow_ry_col = this._get_end_effector_loc(this.root.articulation_matrix,
+                                                        this.r_shoulder.articulation_matrix,
+                                                        r_elbow_arc_mat).minus(this.end_effector_loc).times(1/DDOF);
+        return Matrix.of([0, 0, 0, 0, 0, 0, r_shoulder_rx_col[0], r_shoulder_ry_col[0], r_shoulder_rz_col[0], r_elbow_rx_col[0], r_elbow_ry_col[0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, r_shoulder_rx_col[1], r_shoulder_ry_col[1], r_shoulder_rz_col[1], r_elbow_rx_col[1], r_elbow_ry_col[1], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, r_shoulder_rx_col[2], r_shoulder_ry_col[2], r_shoulder_rz_col[2], r_elbow_rx_col[2], r_elbow_ry_col[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], )
+
+    }
+
+    _get_end_effector_loc(root_arc_mat, r_shoulder_arc_mat, r_elbow_arc_mat){ //end effector is the right hand location 
+        let transform_matrix = Mat4.identity().times(this.root.location_matrix).times(root_arc_mat)
+                                              .times(this.r_shoulder.location_matrix).times(r_shoulder_arc_mat)
+                                              .times(this.r_elbow.location_matrix).times(r_elbow_arc_mat).times(Mat4.translation(0.6, 0, 0));
+        let end_effector_loc = transform_matrix.times(vec4(0, 0, 0, 1));
+        return end_effector_loc.to3(); 
+    }
+
+    _get_current_end_effector_loc(){
+        return this._get_end_effector_loc(this.root.articulation_matrix, 
+                                          this.r_shoulder.articulation_matrix, 
+                                          this.r_elbow.articulation_matrix);
     }
 
     _set_dof(){
