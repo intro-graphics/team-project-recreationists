@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import { Particles_Emitter } from './particle.js';
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
@@ -114,21 +115,24 @@ class Articulated_Player{
         //state 
         this.is_walking = false;
         this.walking_time = 0;
-        this.is_waving = false; 
+        this.is_waving = false;
+        // particle while moving 
+        this.particles_emitter = new Particles_Emitter(1.5, 0.1, 0.2, vec4(220/255, 198/255, 152/255, 1.0), 3, 1, 3, false);
     }
 
     //update player model 
     update(player_matrix, program_state){
-        this._fk_update(program_state);
+        this._fk_update(player_matrix, program_state);
         this._set_dof();
         this.root.location_matrix = player_matrix.times(Mat4.translation(0, 0.75, 0));
     }
 
-    _fk_update(program_state){
+    _fk_update(player_matrix, program_state){
         let dt = program_state.animation_delta_time/1000;
         let t = program_state.animation_time/1000;
         //walking animation
         if(this.is_walking){
+            this.particles_emitter.add_particles(player_matrix.times(Mat4.translation(0, -1, 0)));
             this.walking_time+=dt*10;
             //create a function for the joint angle of arm 
             let rx = Math.sin(this.walking_time);
@@ -145,6 +149,9 @@ class Articulated_Player{
             //settle movement of arm at rest 
             this.dof[8][0] = -DEFAULT_SHOULDER_RZ + 1/30*Math.sin(t*2); //r_shoulder_rz
             this.dof[15][0] = DEFAULT_SHOULDER_RZ - 1/30*Math.sin(t*2); //l_shoulder_rz
+        }
+        if(!this.particles_emitter.is_empty()){
+            this.particles_emitter.update_particles(program_state);
         }
     }
 
@@ -190,6 +197,8 @@ class Articulated_Player{
     }
 
     draw(context, program_state, material) {
+        //draw particles
+        this.particles_emitter.render(context, program_state)
         this.matrix_stack = [];
         this._rec_draw(this.root, Mat4.identity(), context, program_state, material);
     }
