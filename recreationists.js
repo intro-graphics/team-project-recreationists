@@ -356,6 +356,7 @@ class G {
         // shift: false,
         // a: false,
         // s: false
+        f: false
     };
 
     // if any key was pressed (used for initial camera)
@@ -460,6 +461,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
         this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
         this.key_triggered_button("Show Spline Curve", ["Shift", "C"], () => G.show_curve = !G.show_curve);
+        //this.key_triggered_button("Wave hand", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
     }
 
     texture_buffer_init(gl) {
@@ -1984,6 +1986,12 @@ class LocalPlayer extends Player {
                 //console.log("m pressed");
                 this.apply_force([0, 9.8 * 0.04, 0]);
             }
+        }
+
+        if(G.controls.f === true){
+            G.key_was_pressed = true;
+            this.player_model.is_waving = true;
+            this.player_model.set_wave_fn(this.player_model._get_current_end_effector_loc());
         }
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
         //program_state.set_camera(desired);

@@ -8,7 +8,7 @@ const {
 const DEFAULT_SHOULDER_RZ = 1.2;
 const DDOF = 0.0001 // for Jacobian numerial solution 
 const EPSILON = 0.001 // for IK conversion
-const MAX_ITERATION = 50 // max iteration for IK in case it does not converge small enough
+const MAX_ITERATION = 100 // max iteration for IK in case it does not converge small enough
 const STEP_FACTOR = 0.1 //step factor 
 
 export const Articulated_Player = 
@@ -128,22 +128,30 @@ class Articulated_Player{
         this.particles_emitter = new Particles_Emitter(1.5, 0.1, 0.2, vec4(220/255, 198/255, 152/255, 1.0), 3, 1, 3, false);
     }
 
-    set_wave_fn(){
-
+    set_wave_fn(end_effector_loc){ //naive function not working 
+        this.waving_curve_fn =  (t) => {
+            if(t <= 1){ //initial movement 
+                let target_loc = end_effector_loc.plus(vec3(0, 0.35, 0));
+                return end_effector_loc.plus(target_loc.minus(end_effector_loc).times(t));
+            }
+            return end_effector_loc;
+        }
     }
 
     //update player model 
     update(player_matrix, program_state){
         this._fk_update(player_matrix, program_state);
         if(this.is_waving){
-
-            this._ik_update(this.end_effector_loc);
+            this.waving_time += program_state.animation_delta_time/1000;
+            this._ik_update(this.waving_curve_fn(this.waving_time));
+            if(this.waving_time > 4){
+                this.is_waving = false;
+                this.waving_time = 0;
+            }
         }
         this._set_dof();
         //player location update 
         this.root.location_matrix = player_matrix.times(Mat4.translation(0, 0.75, 0));
-        //current end effector location update 
-        this.end_effector_loc = this._get_current_end_effector_loc();
     }
 
     _fk_update(player_matrix, program_state){
@@ -152,6 +160,7 @@ class Articulated_Player{
         //walking animation
         if(this.is_walking){
             this.is_waving = false; //walking terminates the waving animation 
+            this.waving_time = 0;
             this.particles_emitter.add_particles(player_matrix.times(Mat4.translation(0, -0.9, 0)));
             this.walking_time+=dt*10;
             //create a function for the joint angle of arm 
@@ -160,13 +169,15 @@ class Articulated_Player{
             this.dof[14][0] = rx; //left shoulder rx
             this.dof[11][0] = rx; //right hip rx
             this.dof[18][0] = -rx; //left hip rx
-        }else if(!this.is_waving){ //not walking 
+        }else{ //not walking 
             this.walking_time = 0;
-            this.dof[6][0] = 0; //right shoulder
-            this.dof[7][0] = 0; //right shoulder
-            this.dof[8][0] = 0; //right shoulder
-            this.dof[9][0] = 0; //right wrisp 
-            this.dof[10][0] = 0; //right wrisp 
+            if(!this.is_waving){
+                this.dof[6][0] = 0; //right shoulder
+                this.dof[7][0] = 0; //right shoulder
+                this.dof[8][0] = 0; //right shoulder
+                this.dof[9][0] = 0; //right wrisp 
+                this.dof[10][0] = 0; //right wrisp 
+            }
             this.dof[14][0] = 0; //left shoulder
             this.dof[11][0] = 0; //right hip rx
             this.dof[18][0] = 0; //left hip rx
@@ -194,6 +205,7 @@ class Articulated_Player{
             let delta_dof = j_psuedoinv.times(mat_delta_x);
             // apply changes to human model 
             this.dof = this.dof.plus(delta_dof) //update joint step 1
+            this._set_dof(); //update joint step 2
             this.end_effector_loc = this._get_current_end_effector_loc(); //update end_effector_loc
             error = target_loc.minus(this.end_effector_loc).norm(); //update error 
             iteration_count++;
