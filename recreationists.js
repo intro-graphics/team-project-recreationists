@@ -380,6 +380,123 @@ class G {
     static slides; // slides instance
 }
 
+class Simulation {
+    constructor() {
+      this.particles = [];
+      this.springs = [];
+      this.g_acc = vec3(0, 0, 0);
+      this.ground_ks = 0;
+      this.ground_kd = 0;
+    }
+  
+    update(dt) {
+      
+        for (const p of this.particles) {
+            p.ext_force = vec3(0, 0, 0);
+            // add gravity
+            p.ext_force = this.g_acc.times(p.mass);
+            // add ground collision and damping
+            // secret_calculate_ground_forces(this, p);
+            this.handle_ground_collision(p);
+        }
+      for (const s of this.springs) {
+        s.update();
+      }
+      for (const p of this.particles) {
+        p.update(dt);
+      }
+      
+    }
+  
+    handle_ground_collision(p) {
+      // detect if ground collision with particles
+  
+      const P = vec3(0, 0, 0); // ground location
+      const n = vec3(0, 1, 0); // normal
+  
+     
+      const x = p.pos;
+      const collision_eq = (x.minus(P)).dot(n);
+      if (collision_eq < 0) {
+        //console.log("colliding");
+  
+        p.ext_force = vec3(0, 0, 0); //stop gravity if colliding with ground
+        //p.ext_force = p.ext_force.times(-1);
+        
+        const ks = this.ground_ks;
+        const kd = this.ground_kd;
+        const P_g = P;
+        const nhat = n;
+        const v = p.vel;
+      
+        const P_g_minus_x = P_g.minus(x);
+        const P_g_minus_x_dot_nhat = P_g_minus_x.dot(nhat);
+  
+        const fs = nhat.times(ks*P_g_minus_x_dot_nhat);
+  
+        const v_dot_nhat = v.dot(nhat);
+        const fd = nhat.times(kd*v_dot_nhat); 
+        
+        const fn = fs.minus(fd);
+  
+        //console.log(fn);
+        p.ext_force.add_by(fn);
+        //console.log(p.ext_force);
+  
+        //also apply friction if collision is happening
+        const vhat = v.normalized();
+        const f_n = this.g_acc.times(p.mass); // f = ma
+        const fnorm_n = f_n.norm();
+        const mu_k = -2.0 // some random coefficient I came up with (negative because this is opposite to direction of motion)
+  
+        // f_k = -\mu_k ||f_n|| v_t / ||v_t||
+        const f_k = vhat.times(fnorm_n*mu_k);
+  
+        p.ext_force.add_by(f_k); // add the friction
+      }
+    }
+  
+    draw(webgl_manager, uniforms, shapes, materials) {
+      const red = color(1, 0, 0, 1);
+      const blue = color(0, 0, 1, 1);
+      for (const p of this.particles) {
+        const pos = p.pos;
+        let model_transform = Mat4.scale(0.2, 0.2, 0.2);
+        model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
+        //const phong = new defs.Phong_Shader();
+        //const metal = { shader: phong, ambient: .2, diffusivity: 1, specularity:  1, color: color( .9,.5,.9,1 ) };
+  
+        shapes.ball.draw( webgl_manager, uniforms, model_transform,  { ...materials, color: blue} );
+  
+      }
+  
+      // using cubes
+      for (const s of this.springs) {
+        //console.log(s);
+        const p1 = s.particle_1.pos;
+        const p2 = s.particle_2.pos;
+        const len = (p2.minus(p1)).norm();
+        const center = (p1.plus(p2)).times(0.5);
+  
+        let model_transform = Mat4.scale(0.05, len/2, 0.05);
+  
+        // credit: https://computergraphics.stackexchange.com/questions/4008/rotate-a-cylinder-from-xy-plane-to-given-points
+        const p = p1.minus(p2).normalized();
+        let v = vec3(0, 1, 0);
+        if (Math.abs(v.cross(p).norm()) < 0.1) {
+          v = vec3(0, 0, 1);
+          model_transform = Mat4.scale(0.05, 0.05, len/2);
+        }
+        const w = v.cross(p).normalized();
+  
+        const theta = Math.acos(v.dot(p));
+        model_transform.pre_multiply(Mat4.rotation(theta, w[0], w[1], w[2]));
+        model_transform.pre_multiply(Mat4.translation(center[0], center[1], center[2]));
+        shapes.box.draw(webgl_manager, uniforms, model_transform, {...materials, color: red});
+      }
+    }
+}
+
 
 export class Recreationists extends Scene {
     constructor() {
@@ -439,6 +556,13 @@ export class Recreationists extends Scene {
         //this.light_turned_on = true; // overrides all the light (testing if performance can be better)
 
         this.game = new Game();
+        
+        this.time_step = 0.001;
+        this.running = false;
+        this.t_sim = 0.0;
+        this.sim_speed = 1.0;
+        this.sim = new Simulation();
+        
     }
 
     make_control_panel() {
@@ -540,7 +664,7 @@ export class Recreationists extends Scene {
         // }
 
         const t = program_state.animation_time / 1000;
-        const dt = program_state.animation_delta_time / 1000;
+        //const dt = program_state.animation_delta_time / 1000;
 
         let model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.translation(0, 0, 0));
@@ -627,6 +751,23 @@ export class Recreationists extends Scene {
 
         // update game
         this.game.update(context, program_state);
+
+        // physics simulation
+        let dt = Math.min(1/30, program_state.animation_delta_time/1000);
+        dt *= this.sim_speed;
+    
+        if (this.running) {
+        const t_next = this.t_sim + dt;
+        while (this.t_sim < t_next) {
+            this.sim.update(this.time_step);
+            this.t_sim += this.time_step;
+        }
+        }
+        
+        const blue = color(0, 0, 1, 1);        
+        this.sim.draw(context, this.uniforms, this.shapes, {...this.materials.metal, color: blue});
+
+    
 
         // Step 3: display the textures
         if (this.shadow_demo) {
@@ -1741,8 +1882,8 @@ class LocalPlayer extends Player {
     constructor() {
         super();
         this.camera_matrix = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
-        this.acceleration = new Vector([0, 0, 0]);
-        this.velocity = new Vector([0, 0, 0]);
+        this.acceleration = vec3(0, 0, 0);
+        this.velocity = vec3(0, 0, 0);
         this.jumping = false;
         this.speed = 0.1;
         this.rotation_speed = 0.01;
@@ -1821,7 +1962,7 @@ class LocalPlayer extends Player {
                 this.jumping = true;
                 //this.player_matrix = this.player_matrix.times(Mat4.translation(0,1,0));
                 //console.log("m pressed");
-                this.apply_force([0, 9.8 * 0.04, 0]);
+                this.apply_force([0, 9.8 * 0.02, 0]);
             }
         }
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
@@ -1867,6 +2008,8 @@ class LocalPlayer extends Player {
     }
 
     update(context, program_state) {
+        this.acceleration = this.acceleration.times(0);
+
         this.key_pressed(context, program_state);
         // if (this.key_was_pressed) {
         //     this.camera_matrix = Mat4.inverse(this.player_matrix
@@ -1890,7 +2033,7 @@ class LocalPlayer extends Player {
         //this.velocity = this.velocity.plus(g); // apply gravity
 
         //console.log(this.velocity);
-        this.velocity = this.velocity.plus(this.acceleration);
+        
 
         // test if bottom collision
         this.collision_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], 0));
@@ -1913,14 +2056,24 @@ class LocalPlayer extends Player {
 
         this.collision_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], this.velocity[2]));
 
+        // moving into a collision
         if (this.collision_test(this.collision_matrix)) {
             this.velocity = vec3(0, this.velocity[1], 0);
         }
 
+        // already in a collision without moving
+        if (this.collision_test(this.player_matrix)) {
+            console.log("colliding in object");
+            //this.apply_force([0, 0, -this.speed * 3]);
+            this.velocity = vec3(0, 0, this.speed * 3);
+        }
+
+        
         this.player_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], this.velocity[2])); //this.velocity.z));
+        this.velocity = this.velocity.plus(this.acceleration);
         //this.player_matrix = this.player_matrix.times(Mat4.translation(0,-0.001,0,)); //this.velocity.z));
 
-        this.acceleration = this.acceleration.times(0);
+        
         //console.log(this.acceleration);
 
         // update camera
@@ -1928,6 +2081,8 @@ class LocalPlayer extends Player {
             //.times(Mat4.rotation(Math.PI/4,0,0,0))
         );
         program_state.set_camera(this.camera_matrix);
+
+        
         /*
         // tell the server our position
         G.socket.emit('update', {
