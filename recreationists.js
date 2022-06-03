@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import { Articulated_Player } from './player-model.js';
 import {
     Buffered_Texture,
     Color_Phong_Shader,
@@ -6,6 +7,7 @@ import {
     LIGHT_DEPTH_TEX_SIZE,
     Shadow_Textured_Phong_Shader
 } from './shadow-shaders.js';
+import { Hermite_Spline, Curve_Shape } from './spline.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -354,6 +356,7 @@ class G {
         // shift: false,
         // a: false,
         // s: false
+        f: false
     };
 
     // if any key was pressed (used for initial camera)
@@ -378,6 +381,8 @@ class G {
     static hide_other_players = false;
 
     static slides; // slides instance
+    
+    static show_curve=false;
 }
 
 
@@ -455,6 +460,8 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Toggle shadow", ["Shift", "O"], () => this.shadow_demo = !this.shadow_demo)
         this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
         this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
+        this.key_triggered_button("Show Spline Curve", ["Shift", "C"], () => G.show_curve = !G.show_curve);
+        //this.key_triggered_button("Wave hand", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
     }
 
     texture_buffer_init(gl) {
@@ -981,6 +988,9 @@ class Game {
 
         //flagpole
         this.entities.push(new Flagpole());
+
+        //Attempt
+        this.entities.push(new Birdy())
 
         //Slides instance
         G.slides = new Slides();
@@ -1587,6 +1597,150 @@ class Fountain {
     }
 }
 
+
+//Bird
+class Birdy extends Shape {
+    constructor(){
+        super( "position", "normal", "texture_coord" );
+        
+        //colors
+        this.color1=color(Math.random(),Math.random(),Math.random(),1);
+        this.color2=color(Math.random(),Math.random(),Math.random(),1);
+        this.color3=color(Math.random(),Math.random(),Math.random(),1);
+        this.color4=color(Math.random(),Math.random(),Math.random(),1);
+        this.yellow=color( 1,0.7,0,1 );
+
+        //arrays
+        this.points = [];
+        this.curves = [];
+
+        //variables
+        this.sample_count = 10;
+        this.step=0;
+        this.curve_step=0;
+
+
+        //spline
+        this.spline = new Hermite_Spline(this.sample_count);
+
+        //populating spline
+        this.spline.add_point(0.0, 5.0, 0.0,-5.0,0.0,5.0);
+        this.spline.add_point(0.0, 10.0, 5.0,-5.0,0.0,5.0);
+        this.spline.add_point(5.0, 5.0, 5.0,-5.0,0.0,5.0);
+        this.spline.add_point(5.0, 10.0, 0.0,-5.0,0.0,5.0);
+        this.spline.add_point(0.0, 5.0, 0.0,-5.0,0.0,5.0);
+
+        for (let p of this.spline.points) {
+         this.points.push(p);
+        }
+         for (let c of this.spline.curve_fns) {
+         // console.log(c(2));
+             this.curves.push(new Curve_Shape(c, this.sample_count));
+    }
+
+      
+    }
+  
+    draw(context, program_state, shadow ) {
+        
+      //main body
+
+      //to draw the curve
+      if (G.show_curve){
+        for (let c of this.curves) {
+       
+            c.draw(context, program_state);
+        }
+      }
+      
+      let model_transform=Mat4.translation(0,10,0);
+
+      let prev_step=0;
+
+      if (this.step <this.sample_count){
+          prev_step=this.step;
+          this.step +=0.05;
+      }
+      if (this.step >=this.sample_count){
+          this.step=0;
+          prev_step=0
+          this.curve_step +=1;
+      }
+      if (this.curve_step > (this.spline.num_points-2)){
+        this.curve_step=0;
+        //this.step=0;
+      }
+      if (this.spline.num_points >0){
+        let fn= this.spline.curve_fns[this.curve_step];
+    
+        let pos = fn(this.step/this.sample_count);
+          
+        //need to fix rotation to follow along the curve. Not Hundre percent sure of this
+        model_transform= Mat4.translation(pos[0],pos[1],pos[2])
+              .times(Mat4.rotation(180,0,-1,0,))
+              .times(Mat4.scale(0.5,0.5,0.5));
+              
+  
+      }
+
+
+
+      let main_body_transform=model_transform
+                          .times(Mat4.scale(0.5,0.4,1));
+      G.shapes.sphere.draw(context, program_state, main_body_transform, {...G.materials.brick_stairs,color:this.color1});
+  
+      //head
+      let head_transform=model_transform
+                          .times(Mat4.translation(0,0.35,1.2))
+                          .times(Mat4.rotation(60,-1,0,0))
+                          .times(Mat4.scale(0.25,0.30,0.5));
+      G.shapes.sphere.draw(context, program_state, head_transform, {...G.materials.brick_stairs,color:this.color2});
+      
+      //beak
+      let beak_transform=model_transform
+                          .times(Mat4.translation(0,0.35,1.8))
+                          //.times(Mat4.rotation(60,-1,0,0))
+                          .times(Mat4.scale(0.1,0.1,0.4));
+                          
+      G.shapes.cone.draw(context, program_state, beak_transform, {...G.materials.brick_stairs,color:this.yellow});
+    
+      //right wing
+      let rocking_angle=Math.PI/13*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
+      let theta=Math.PI/9;
+      let right_wing_transform=model_transform
+                          .times(Mat4.translation(-1.1,0.2,0.2))
+                          .times(Mat4.rotation(rocking_angle,0,0,1))
+                          .times(Mat4.scale(1,0.1,0.3));
+      G.shapes.sphere.draw(context, program_state, right_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+  
+      //left wing
+      let left_wing_transform=model_transform
+      .times(Mat4.translation(1.1,0.2,0.2))
+      .times(Mat4.rotation(-rocking_angle,0,0,1))
+      .times(Mat4.scale(1,0.1,0.3));
+    G.shapes.sphere.draw(context, program_state, left_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+        
+  
+        //tail
+        let  tail_transform=model_transform
+        .times(Mat4.translation(0,-0.1,-1.2))
+        .times(Mat4.rotation(49.9,1,0,0))
+        .times(Mat4.scale(0.1,0.05,0.6));
+      G.shapes.sphere.draw(context, program_state, tail_transform, {...G.materials.brick_stairs,color:this.color4});
+        let tail_transform2=tail_transform
+        .times(Mat4.translation(1,-1,0));
+        G.shapes.sphere.draw(context, program_state, tail_transform2,{...G.materials.brick_stairs,color:this.color4});
+        let tail_transform3=tail_transform
+        .times(Mat4.translation(-1,-1,0));
+        G.shapes.sphere.draw(context, program_state, tail_transform3, {...G.materials.brick_stairs,color:this.color4});
+      
+      }
+      update(context, program_state) {
+        
+    }
+    }
+
+
 // This is a general player. It is used to make adding new players easy. Use local player for the player
 // that you actually control in the game.
 class Player {
@@ -1596,6 +1750,7 @@ class Player {
                                             .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 200 - 100))
                                             //.times(Mat4.scale(1, 2, 1))
                                             ;
+        this.player_model = new Articulated_Player(this.player_matrix);
         this.socket_id = socket_id;
         this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
@@ -1784,6 +1939,14 @@ class LocalPlayer extends Player {
         let z = this.player_matrix[2];
 
         //console.log(x,y,z);
+
+        //check if player is walking 
+        if((G.controls.w || G.controls.a || G.controls.s || G.controls.d) && !this.jumping){
+            this.player_model.is_walking = true;
+        }else{
+            this.player_model.is_walking = false;
+        }
+
         this.velocity[2] = 0; // don't move unless button pressed
         if (G.controls.w === true) {
             G.key_was_pressed = true;
@@ -1823,6 +1986,12 @@ class LocalPlayer extends Player {
                 //console.log("m pressed");
                 this.apply_force([0, 9.8 * 0.04, 0]);
             }
+        }
+
+        if(G.controls.f === true){
+            G.key_was_pressed = true;
+            this.player_model.is_waving = true;
+            this.player_model.set_wave_fn(this.player_model._get_current_end_effector_loc());
         }
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
         //program_state.set_camera(desired);
@@ -1934,6 +2103,7 @@ class LocalPlayer extends Player {
             player_matrix: this.player_matrix,
         })
         */
+        this.player_model.update(this.player_matrix, program_state);
     }
 
     draw(context, program_state, shadow) {
@@ -1979,6 +2149,7 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.rotation(this.flip_angle,1,0,0));
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,-0.75,0));
 
+            /*
             // The  player_matrix coordinates origin (0,0,0) will represent the bottom-middle of the upper body
             // First draw the upper body as a 1.2x1.5x0.6 rectangle centered at (0, 0.75, 0)
             // Upper Body:
@@ -2060,8 +2231,13 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.5,1/0.5,1/0.5))
                                                  .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
-
-
+            */
+            //now debug human model first 
+            this.player_model.dof[20][0] = this.flip_angle;
+            this.player_model.set_color(this.colorArray[0],this.colorArray[3], this.colorArray[1], this.colorArray[2]);
+            this.player_model.draw(context, program_state, 
+                shadow ? G.materials.player : G.materials.pure);
+            
 
         // tell the server our position (put this here so the backflips replicate)
         G.socket.emit('update', {
