@@ -130,11 +130,11 @@ class Articulated_Player{
 
     set_wave_fn(end_effector_loc){ //naive function not working 
         this.waving_curve_fn =  (t) => {
-            if(t <= 1){ //initial movement 
-                let target_loc = end_effector_loc.plus(vec3(0, 0.35, 0));
-                return end_effector_loc.plus(target_loc.minus(end_effector_loc).times(t));
+            let target_loc = end_effector_loc.plus(vec3(0, 2, 0));
+            if(t <= 0.5){ //initial movement 
+                return end_effector_loc.plus(target_loc.minus(end_effector_loc).times(t*2));
             }
-            return end_effector_loc;
+            return this._get_current_end_effector_loc();
         }
     }
 
@@ -159,8 +159,16 @@ class Articulated_Player{
         let t = program_state.animation_time/1000;
         //walking animation
         if(this.is_walking){
-            this.is_waving = false; //walking terminates the waving animation 
-            this.waving_time = 0;
+            if(this.is_waving){
+                this.is_waving = false; //walking terminates the waving animation 
+                this.waving_time = 0;
+                //reset waving movement
+                this.dof[6][0] = 0; //right shoulder
+                this.dof[7][0] = 0; //right shoulder
+                this.dof[8][0] = -DEFAULT_SHOULDER_RZ + 1/30*Math.sin(t*2); //r_shoulder_rz settle movement
+                this.dof[9][0] = 0; //right wrisp 
+                this.dof[10][0] = 0; //right wrisp 
+            }
             this.particles_emitter.add_particles(player_matrix.times(Mat4.translation(0, -0.9, 0)));
             this.walking_time+=dt*10;
             //create a function for the joint angle of arm 
@@ -174,7 +182,7 @@ class Articulated_Player{
             if(!this.is_waving){
                 this.dof[6][0] = 0; //right shoulder
                 this.dof[7][0] = 0; //right shoulder
-                this.dof[8][0] = 0; //right shoulder
+                this.dof[8][0] = -DEFAULT_SHOULDER_RZ + 1/30*Math.sin(t*2); //r_shoulder_rz settle movement
                 this.dof[9][0] = 0; //right wrisp 
                 this.dof[10][0] = 0; //right wrisp 
             }
@@ -182,7 +190,6 @@ class Articulated_Player{
             this.dof[11][0] = 0; //right hip rx
             this.dof[18][0] = 0; //left hip rx
             //settle movement of arm at rest 
-            this.dof[8][0] = -DEFAULT_SHOULDER_RZ + 1/30*Math.sin(t*2); //r_shoulder_rz
             this.dof[15][0] = DEFAULT_SHOULDER_RZ - 1/30*Math.sin(t*2); //l_shoulder_rz
         }
         if(!this.particles_emitter.is_empty()){

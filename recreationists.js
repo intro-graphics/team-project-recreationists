@@ -461,7 +461,7 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
         this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
         this.key_triggered_button("Show Spline Curve", ["Shift", "C"], () => G.show_curve = !G.show_curve);
-        //this.key_triggered_button("Wave hand", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
+        this.key_triggered_button("Cheer!", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
     }
 
     texture_buffer_init(gl) {
