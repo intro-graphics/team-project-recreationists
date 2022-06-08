@@ -2216,7 +2216,7 @@ class LocalPlayer extends Player {
             //.times(Mat4.translation(0,0,-z));
         }
 
-        if (G.controls.shift === true) {
+        if (G.controls.shift === true && this.player_model.is_waving != true) {
             G.key_was_pressed = true;
             if (!this.jumping) {
                 this.jumping = true;
@@ -2226,7 +2226,7 @@ class LocalPlayer extends Player {
             }
         }
 
-        if(G.controls.f === true){
+        if(G.controls.f === true && this.jumping != true){
             G.key_was_pressed = true;
             this.player_model.is_waving = true;
             this.player_model.set_wave_fn(this.player_model._get_current_end_effector_loc());
