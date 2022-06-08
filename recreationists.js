@@ -995,8 +995,24 @@ class Game {
         //flagpole
         this.entities.push(new Flagpole());
 
-        //Attempt
-        this.entities.push(new Birdy())
+        //Bird
+        //Along pathway
+        this.path1=[[0.0, 7.0, 0.0,    -10.0,0.0,10.0],
+                    [0.0, 7.0, 10.0,    10.0,0.0,10.0],
+                    [10.0, 7.0, 10.0,  10.0, 0.0,-10.0], //-
+                    [10.0, 7.0, 0.0,    -10.0,0.0,-10.0],
+                    [0.0, 7.0, 0.0,    -10.0,0.0,10.0]];
+        this.entities.push(new Birdy(this.path1));
+
+        //Around Flag
+
+        this.path2=[[-10.0, 10.0, -250.0,-5.0,0.0,5.0],
+                    [-10.0, 20.0, -275.0,5.0,0.0,5.0],
+                    [10.0, 30.0, -275.0,5.0,0.0,-5.0],
+                    [10.0, 40.0, -250.0,-5.0,0.0,-5.0],
+                    [-10.0, 10.0, -250.0,-5.0,0.0,5.0]];
+        this.entities.push(new Birdy(this.path2));
+
 
         //Slides instance
         G.slides = new Slides();
@@ -1808,7 +1824,7 @@ class Fountain {
 
 //Bird
 class Birdy extends Shape {
-    constructor(){
+    constructor(v){
         super( "position", "normal", "texture_coord" );
         
         //colors
@@ -1826,127 +1842,141 @@ class Birdy extends Shape {
         this.sample_count = 10;
         this.step=0;
         this.curve_step=0;
-
+        this.prev_vec=vec3(0,0,0);
 
         //spline
         this.spline = new Hermite_Spline(this.sample_count);
 
         //populating spline
-        this.spline.add_point(0.0, 5.0, 0.0,-5.0,0.0,5.0);
-        this.spline.add_point(0.0, 10.0, 5.0,-5.0,0.0,5.0);
-        this.spline.add_point(5.0, 5.0, 5.0,-5.0,0.0,5.0);
-        this.spline.add_point(5.0, 10.0, 0.0,-5.0,0.0,5.0);
-        this.spline.add_point(0.0, 5.0, 0.0,-5.0,0.0,5.0);
-
+        //v is array of array[ x,y,z,,tx,ty,tz]
+        for (let pt of v){
+            this.spline.add_point(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5])
+        }
         for (let p of this.spline.points) {
          this.points.push(p);
         }
          for (let c of this.spline.curve_fns) {
          // console.log(c(2));
              this.curves.push(new Curve_Shape(c, this.sample_count));
+    }  
     }
 
-      
-    }
-  
     draw(context, program_state, shadow ) {
-        
-      //main body
+        let prev_step=0;
 
-      //to draw the curve
-      if (G.show_curve){
+        //to draw the curve
+        if (G.show_curve){
         for (let c of this.curves) {
-       
-            c.draw(context, program_state);
+
+        c.draw(context, program_state);
+            }
         }
-      }
-      
-      let model_transform=Mat4.translation(0,10,0);
 
-      let prev_step=0;
-
-      if (this.step <this.sample_count){
-          prev_step=this.step;
-          this.step +=0.05;
-      }
-      if (this.step >=this.sample_count){
-          this.step=0;
-          prev_step=0
-          this.curve_step +=1;
-      }
-      if (this.curve_step > (this.spline.num_points-2)){
+        if (this.step <=this.sample_count){
+        prev_step=this.step;
+        this.step +=0.05;
+        }
+        if (this.step >this.sample_count){
+        this.step=0;
+        //prev_step=0
+        this.curve_step +=1;
+        }
+        if (this.curve_step > (this.spline.num_points-2)){
         this.curve_step=0;
-        //this.step=0;
-      }
-      if (this.spline.num_points >0){
+
+        }
+        if (this.spline.num_points >0){
         let fn= this.spline.curve_fns[this.curve_step];
-    
+
         let pos = fn(this.step/this.sample_count);
-          
-        //need to fix rotation to follow along the curve. Not Hundre percent sure of this
-        model_transform= Mat4.translation(pos[0],pos[1],pos[2])
-              .times(Mat4.rotation(180,0,-1,0,))
-              .times(Mat4.scale(0.5,0.5,0.5));
-              
-  
-      }
+
+        let next =fn ((this.step+1)/this.sample_count);
+        let dis=next.minus(pos);
+        let x= dis.normalized();
+        let dt=x.minus(this.prev_vec.normalized());
+        let y=dt.normalized();
+        this.prev_vec=x;
+        //change of basis
+        let u = [];
+        u[0] = x;
+        u[1] = y;
+        u[2] = u[1].cross(u[0]).normalized();
+        let change_of_bases = Mat4.identity();
+        for (let i = 0; i < 3; i++) {
+        change_of_bases[i][0] = u[0][i];
+        change_of_bases[i][1] = u[1][i];
+        change_of_bases[i][2] = u[2][i];
+        }
+
+        let model_transform=Mat4.scale(0.5,0.5,0.5)
+                        .times(Mat4.rotation(1.5,-1,0,0))
+                        .times(Mat4.rotation(1.5,0,1,0));
+
+        model_transform=model_transform.pre_multiply(change_of_bases);
+
+        model_transform= model_transform
+        .pre_multiply(Mat4.translation(pos[0],pos[1],pos[2]));    
+        this.drawing_parts(context,program_state,model_transform,shadow);
+            
+        }
+    }
+
+    drawing_parts(context,program_state,model_transform,shadow) {
 
 
+        let main_body_transform=model_transform
+        .times(Mat4.scale(0.5,0.4,1));
+        G.shapes.sphere.draw(context, program_state, main_body_transform, {...G.materials.brick_stairs,color:this.color1});
 
-      let main_body_transform=model_transform
-                          .times(Mat4.scale(0.5,0.4,1));
-      G.shapes.sphere.draw(context, program_state, main_body_transform, {...G.materials.brick_stairs,color:this.color1});
-  
-      //head
-      let head_transform=model_transform
-                          .times(Mat4.translation(0,0.35,1.2))
-                          .times(Mat4.rotation(60,-1,0,0))
-                          .times(Mat4.scale(0.25,0.30,0.5));
-      G.shapes.sphere.draw(context, program_state, head_transform, {...G.materials.brick_stairs,color:this.color2});
-      
-      //beak
-      let beak_transform=model_transform
-                          .times(Mat4.translation(0,0.35,1.8))
-                          //.times(Mat4.rotation(60,-1,0,0))
-                          .times(Mat4.scale(0.1,0.1,0.4));
-                          
-      G.shapes.cone.draw(context, program_state, beak_transform, {...G.materials.brick_stairs,color:this.yellow});
-    
-      //right wing
-      let rocking_angle=Math.PI/13*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
-      let theta=Math.PI/9;
-      let right_wing_transform=model_transform
-                          .times(Mat4.translation(-1.1,0.2,0.2))
-                          .times(Mat4.rotation(rocking_angle,0,0,1))
-                          .times(Mat4.scale(1,0.1,0.3));
-      G.shapes.sphere.draw(context, program_state, right_wing_transform, {...G.materials.brick_stairs,color:this.color3});
-  
-      //left wing
-      let left_wing_transform=model_transform
-      .times(Mat4.translation(1.1,0.2,0.2))
-      .times(Mat4.rotation(-rocking_angle,0,0,1))
-      .times(Mat4.scale(1,0.1,0.3));
-    G.shapes.sphere.draw(context, program_state, left_wing_transform, {...G.materials.brick_stairs,color:this.color3});
-        
-  
+        //head
+        let head_transform=model_transform
+        .times(Mat4.translation(0,0.35,1.2))
+        .times(Mat4.rotation(60,-1,0,0))
+        .times(Mat4.scale(0.25,0.30,0.5));
+        G.shapes.sphere.draw(context, program_state, head_transform, {...G.materials.brick_stairs,color:this.color2});
+
+        //beak
+        let beak_transform=model_transform
+        .times(Mat4.translation(0,0.35,1.8))
+        //.times(Mat4.rotation(60,-1,0,0))
+        .times(Mat4.scale(0.1,0.1,0.4));
+
+        G.shapes.cone.draw(context, program_state, beak_transform, {...G.materials.brick_stairs,color:this.yellow});
+
+        //right wing
+        let rocking_angle=Math.PI/13*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
+        let theta=Math.PI/9;
+        let right_wing_transform=model_transform
+        .times(Mat4.translation(-1.1,0.2,0.2))
+        .times(Mat4.rotation(rocking_angle,0,0,1))
+        .times(Mat4.scale(1,0.1,0.3));
+        G.shapes.sphere.draw(context, program_state, right_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+
+        //left wing
+        let left_wing_transform=model_transform
+        .times(Mat4.translation(1.1,0.2,0.2))
+        .times(Mat4.rotation(-rocking_angle,0,0,1))
+        .times(Mat4.scale(1,0.1,0.3));
+        G.shapes.sphere.draw(context, program_state, left_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+
+
         //tail
         let  tail_transform=model_transform
         .times(Mat4.translation(0,-0.1,-1.2))
         .times(Mat4.rotation(49.9,1,0,0))
         .times(Mat4.scale(0.1,0.05,0.6));
-      G.shapes.sphere.draw(context, program_state, tail_transform, {...G.materials.brick_stairs,color:this.color4});
+        G.shapes.sphere.draw(context, program_state, tail_transform, {...G.materials.brick_stairs,color:this.color4});
         let tail_transform2=tail_transform
         .times(Mat4.translation(1,-1,0));
         G.shapes.sphere.draw(context, program_state, tail_transform2,{...G.materials.brick_stairs,color:this.color4});
         let tail_transform3=tail_transform
         .times(Mat4.translation(-1,-1,0));
         G.shapes.sphere.draw(context, program_state, tail_transform3, {...G.materials.brick_stairs,color:this.color4});
-      
-      }
+
+    }
       update(context, program_state) {
-        
-    }
-    }
+        }
+}
 
 
 // This is a general player. It is used to make adding new players easy. Use local player for the player
