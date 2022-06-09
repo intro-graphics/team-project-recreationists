@@ -2305,6 +2305,9 @@ class LocalPlayer extends Player {
        //this.rocking_angle=0; // already defined in parent player class
        //this.rocking_angle2=0;// already defined in parent player class
        this.flip_angle=0;
+
+       this.ks = 0.5; // static force
+       this.kd = 0.5; // kinetic force
     }
 
     // for physics calculation
@@ -2472,7 +2475,14 @@ class LocalPlayer extends Player {
         if (this.collision_test(this.player_matrix)) {
             console.log("colliding in object");
             //this.apply_force([0, 0, -this.speed * 3]);
-            this.velocity = vec3(0, 0, this.speed * 3);
+            //this.velocity = vec3(0, 0, this.speed * 3);
+            // apply a mass spring damper system to move the player outside of the object
+            const P_g = 2;
+            const x_t = 1;
+            const static_force = (P_g-x_t)*this.ks;
+            const dynamic_force = this.kd*(this.velocity[2]);
+            const normal_force = static_force - dynamic_force;
+            this.velocity = vec3(0, 0, normal_force);
         }
 
         
