@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import { Articulated_Player } from './player-model.js';
 import {
     Buffered_Texture,
     Color_Phong_Shader,
@@ -6,6 +7,8 @@ import {
     LIGHT_DEPTH_TEX_SIZE,
     Shadow_Textured_Phong_Shader
 } from './shadow-shaders.js';
+import { Hermite_Spline, Curve_Shape } from './spline.js';
+import { Spring_System } from "./spring-system.js";
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -286,6 +289,7 @@ class G {
         pyramid: new defs.Cone_Tip(1, 4),
         cone: new defs.Cone_Tip(1, 100),
         texture_square: new TextureSquare(),
+        triangle: new defs.Triangle(),
     };
 
     static materials = {
@@ -354,6 +358,7 @@ class G {
         // shift: false,
         // a: false,
         // s: false
+        f: false
     };
 
     // if any key was pressed (used for initial camera)
@@ -378,6 +383,127 @@ class G {
     static hide_other_players = false;
 
     static slides; // slides instance
+    
+    static show_curve=false;
+
+    static show_mesh = false;
+}
+
+class Simulation {
+    constructor() {
+      this.particles = [];
+      this.springs = [];
+      this.g_acc = vec3(0, 0, 0);
+      this.ground_ks = 0;
+      this.ground_kd = 0;
+    }
+  
+    update(dt) {
+      
+        for (const p of this.particles) {
+            p.ext_force = vec3(0, 0, 0);
+            // add gravity
+            p.ext_force = this.g_acc.times(p.mass);
+            // add ground collision and damping
+            // secret_calculate_ground_forces(this, p);
+            this.handle_ground_collision(p);
+        }
+      for (const s of this.springs) {
+        s.update();
+      }
+      for (const p of this.particles) {
+        p.update(dt);
+      }
+      
+    }
+  
+    handle_ground_collision(p) {
+      // detect if ground collision with particles
+  
+      const P = vec3(0, 0, 0); // ground location
+      const n = vec3(0, 1, 0); // normal
+  
+     
+      const x = p.pos;
+      const collision_eq = (x.minus(P)).dot(n);
+      if (collision_eq < 0) {
+        //console.log("colliding");
+  
+        p.ext_force = vec3(0, 0, 0); //stop gravity if colliding with ground
+        //p.ext_force = p.ext_force.times(-1);
+        
+        const ks = this.ground_ks;
+        const kd = this.ground_kd;
+        const P_g = P;
+        const nhat = n;
+        const v = p.vel;
+      
+        const P_g_minus_x = P_g.minus(x);
+        const P_g_minus_x_dot_nhat = P_g_minus_x.dot(nhat);
+  
+        const fs = nhat.times(ks*P_g_minus_x_dot_nhat);
+  
+        const v_dot_nhat = v.dot(nhat);
+        const fd = nhat.times(kd*v_dot_nhat); 
+        
+        const fn = fs.minus(fd);
+  
+        //console.log(fn);
+        p.ext_force.add_by(fn);
+        //console.log(p.ext_force);
+  
+        //also apply friction if collision is happening
+        const vhat = v.normalized();
+        const f_n = this.g_acc.times(p.mass); // f = ma
+        const fnorm_n = f_n.norm();
+        const mu_k = -2.0 // some random coefficient I came up with (negative because this is opposite to direction of motion)
+  
+        // f_k = -\mu_k ||f_n|| v_t / ||v_t||
+        const f_k = vhat.times(fnorm_n*mu_k);
+  
+        p.ext_force.add_by(f_k); // add the friction
+      }
+    }
+  
+    draw(webgl_manager, uniforms, shapes, materials) {
+      const red = color(1, 0, 0, 1);
+      const blue = color(0, 0, 1, 1);
+      for (const p of this.particles) {
+        const pos = p.pos;
+        let model_transform = Mat4.scale(0.2, 0.2, 0.2);
+        model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
+        //const phong = new defs.Phong_Shader();
+        //const metal = { shader: phong, ambient: .2, diffusivity: 1, specularity:  1, color: color( .9,.5,.9,1 ) };
+  
+        shapes.ball.draw( webgl_manager, uniforms, model_transform,  { ...materials, color: blue} );
+  
+      }
+  
+      // using cubes
+      for (const s of this.springs) {
+        //console.log(s);
+        const p1 = s.particle_1.pos;
+        const p2 = s.particle_2.pos;
+        const len = (p2.minus(p1)).norm();
+        const center = (p1.plus(p2)).times(0.5);
+  
+        let model_transform = Mat4.scale(0.05, len/2, 0.05);
+  
+        // credit: https://computergraphics.stackexchange.com/questions/4008/rotate-a-cylinder-from-xy-plane-to-given-points
+        const p = p1.minus(p2).normalized();
+        let v = vec3(0, 1, 0);
+        if (Math.abs(v.cross(p).norm()) < 0.1) {
+          v = vec3(0, 0, 1);
+          model_transform = Mat4.scale(0.05, 0.05, len/2);
+        }
+        const w = v.cross(p).normalized();
+  
+        const theta = Math.acos(v.dot(p));
+        model_transform.pre_multiply(Mat4.rotation(theta, w[0], w[1], w[2]));
+        model_transform.pre_multiply(Mat4.translation(center[0], center[1], center[2]));
+        shapes.box.draw(webgl_manager, uniforms, model_transform, {...materials, color: red});
+      }
+    }
 }
 
 
@@ -439,6 +565,13 @@ export class Recreationists extends Scene {
         //this.light_turned_on = true; // overrides all the light (testing if performance can be better)
 
         this.game = new Game();
+        
+        this.time_step = 0.001;
+        this.running = false;
+        this.t_sim = 0.0;
+        this.sim_speed = 1.0;
+        this.sim = new Simulation();
+        
     }
 
     make_control_panel() {
@@ -455,6 +588,10 @@ export class Recreationists extends Scene {
         this.key_triggered_button("Toggle shadow", ["Shift", "O"], () => this.shadow_demo = !this.shadow_demo)
         this.key_triggered_button("Next slide", ["Shift", "D"], () => G.slides.next_slide())
         this.key_triggered_button("Prev slide", ["Shift", "A"], () => G.slides.prev_slide())
+        this.key_triggered_button("Show Spline Curve", ["Shift", "C"], () => G.show_curve = !G.show_curve);
+        this.key_triggered_button("Cheer!", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
+        this.key_triggered_button("Show Flag Mesh", ["Shift", "F"], () => G.show_mesh = !G.show_mesh);
+        //this.key_triggered_button("Wave hand", ["f"], () => G.controls.f = true, undefined, () => G.controls.f = false);
     }
 
     texture_buffer_init(gl) {
@@ -540,7 +677,7 @@ export class Recreationists extends Scene {
         // }
 
         const t = program_state.animation_time / 1000;
-        const dt = program_state.animation_delta_time / 1000;
+        //const dt = program_state.animation_delta_time / 1000;
 
         let model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.translation(0, 0, 0));
@@ -627,6 +764,23 @@ export class Recreationists extends Scene {
 
         // update game
         this.game.update(context, program_state);
+
+        // physics simulation
+        let dt = Math.min(1/30, program_state.animation_delta_time/1000);
+        dt *= this.sim_speed;
+    
+        if (this.running) {
+        const t_next = this.t_sim + dt;
+        while (this.t_sim < t_next) {
+            this.sim.update(this.time_step);
+            this.t_sim += this.time_step;
+        }
+        }
+        
+        const blue = color(0, 0, 1, 1);        
+        this.sim.draw(context, this.uniforms, this.shapes, {...this.materials.metal, color: blue});
+
+    
 
         // Step 3: display the textures
         if (this.shadow_demo) {
@@ -981,6 +1135,25 @@ class Game {
 
         //flagpole
         this.entities.push(new Flagpole());
+
+        //Bird
+        //Along pathway
+        this.path1=[[0.0, 7.0, 0.0,    -10.0,0.0,10.0],
+                    [0.0, 7.0, 10.0,    10.0,0.0,10.0],
+                    [10.0, 7.0, 10.0,  10.0, 0.0,-10.0], //-
+                    [10.0, 7.0, 0.0,    -10.0,0.0,-10.0],
+                    [0.0, 7.0, 0.0,    -10.0,0.0,10.0]];
+        this.entities.push(new Birdy(this.path1));
+
+        //Around Flag
+
+        this.path2=[[-10.0, 10.0, -250.0,-5.0,0.0,5.0],
+                    [-10.0, 20.0, -275.0,5.0,0.0,5.0],
+                    [10.0, 30.0, -275.0,5.0,0.0,-5.0],
+                    [10.0, 40.0, -250.0,-5.0,0.0,-5.0],
+                    [-10.0, 10.0, -250.0,-5.0,0.0,5.0]];
+        this.entities.push(new Birdy(this.path2));
+
 
         //Slides instance
         G.slides = new Slides();
@@ -1435,12 +1608,142 @@ class Lamppost {
 class Flagpole {
     constructor() {
         this.collision_box = G.register.register(vec3(0, 0, 0));
+
+        // variables
+        this.sample_count = 10;
+        this.t_sim = 0;
+        this.timestep = 0.01;
+
+        // spline
+        this.spline = new Hermite_Spline(this.sample_count);
+        this.spline.add_point(-24, 60, -250, -20, -20, 10);
+        this.spline.add_point(-20, 56, -245, -35, 20,  20);
+        this.points = [];
+        this.curves = [];
+        for (let p of this.spline.points) {
+            this.points.push(p);
+        }
+        for (let c of this.spline.curve_fns) {
+            this.curves.push(new Curve_Shape(c, this.sample_count));
+        }
+
+        // initialize mesh
+        this.mesh = new Spring_System();
+        this.mesh.set_gravity(3);
+
+        // dimensions of flag are 12x24
+        // triangles are 6x8
+        // 2 triangles height and 3 triangles width
+        this.mesh.create_particles(12);
+        this.mesh.create_springs(23);
+        this.mesh.set_particle(0,  0.5,-24, 60, -250, 0, 0 ,0);
+        this.mesh.set_particle(1,  0.5,-24, 54, -250, 0, 0 ,0);
+        this.mesh.set_particle(2,  0.5,-24, 48, -250, 0, 0 ,0);
+        this.mesh.set_particle(3,  0.5,-16, 60, -250, 0, 0 ,0);
+        this.mesh.set_particle(4,  0.5,-16, 54, -250, 0, 0 ,0);
+        this.mesh.set_particle(5,  0.5,-16, 48, -250, 0, 0 ,0);
+        this.mesh.set_particle(6,  0.5,-8,  60, -250, 0, 0 ,0);
+        this.mesh.set_particle(7,  0.5,-8,  54, -250, 0, 0 ,0);
+        this.mesh.set_particle(8,  0.5,-8,  48, -250, 0, 0 ,0);
+        this.mesh.set_particle(9,  0.5,0,   60, -250, 0, 0 ,0);
+        this.mesh.set_particle(10, 0.5,0,   54, -250, 0, 0 ,0);
+        this.mesh.set_particle(11, 0.5,0,   48, -250, 0, 0 ,0);
+        // vertical connections
+        this.mesh.link_spring(0, 0,  1,  1000, 10, 6);
+        this.mesh.link_spring(1, 1,  2,  1000, 10, 6);
+        this.mesh.link_spring(2, 3,  4,  1000, 10, 6);
+        this.mesh.link_spring(3, 4,  5,  1000, 10, 6);
+        this.mesh.link_spring(4, 6,  7,  1000, 10, 6);
+        this.mesh.link_spring(5, 7,  8,  1000, 10, 6);
+        this.mesh.link_spring(6, 9,  10, 1000, 10, 6);
+        this.mesh.link_spring(7, 10, 11, 1000, 10, 6);
+        // horizontal connections
+        this.mesh.link_spring(8,  0,  3,  1000, 10, 8);
+        this.mesh.link_spring(9,  3,  6,  1000, 10, 8);
+        this.mesh.link_spring(10, 6,  9,  1000, 10, 8);
+        this.mesh.link_spring(11, 1,  4,  1000, 10, 8);
+        this.mesh.link_spring(12, 4,  7,  1000, 10, 8);
+        this.mesh.link_spring(13, 7,  10, 1000, 10, 8);
+        this.mesh.link_spring(14, 2,  5,  1000, 10, 8);
+        this.mesh.link_spring(15, 5,  8,  1000, 10, 8);
+        this.mesh.link_spring(16, 8,  11, 1000, 10, 8);
+        // diagonal connections
+        this.mesh.link_spring(17, 0,  4,  1000, 10, 10);
+        this.mesh.link_spring(18, 1,  5,  1000, 10, 10);
+        this.mesh.link_spring(19, 3,  7,  1000, 10, 10);
+        this.mesh.link_spring(20, 4,  8,  1000, 10, 10);
+        this.mesh.link_spring(21, 6,  10, 1000, 10, 10);
+        this.mesh.link_spring(22, 7,  11, 1000, 10, 10);
+
+        // vertices for flag polygons
+        this.triangle_vertices = [
+            [0, 1, 4], [4, 3, 0], [3, 4, 7], [7, 6, 3], [6, 7, 10], [10, 9, 6],
+            [1, 2, 5], [5, 4, 1], [4, 5, 8], [8, 7, 4], [7, 8, 11], [11, 10, 7]];
+    }
+
+    // p1-p2 is height, p3-p2 is length, and p1-p3 is hypotenuse
+    triangle_transform(p1, p2, p3) {
+        // legs of triangle
+        let x = p3.minus(p2);
+        let y = p1.minus(p2);
+        let z = p1.minus(p3);
+
+        // scale triangle
+        let model_transform = Mat4.scale(x.norm(), y.norm(), z.norm());
+
+        // apply change of bases
+        let u = [];
+        u[0] = x.normalized();
+        u[1] = y.normalized();
+        u[2] = u[1].cross(u[0]).normalized();
+        let change_of_bases = Mat4.identity();
+        for (let i = 0; i < 3; i++) {
+            change_of_bases[i][0] = u[0][i];
+            change_of_bases[i][1] = u[1][i];
+            change_of_bases[i][2] = u[2][i];
+        }
+        model_transform.pre_multiply(change_of_bases);
+
+        // translate triangle
+        model_transform.pre_multiply(Mat4.translation(p2[0], p2[1], p2[2]));
+        return model_transform;
+    }
+
+    spring_transform(i) {
+        let s = this.mesh.springs[i];
+        const p1 = this.mesh.particles[s.p1].pos;
+        const p2 = this.mesh.particles[s.p2].pos;
+        const len = (p2.minus(p1)).norm();
+        const center = (p1.plus(p2)).times(0.5);
+
+        let model_transform;
+        if (i < 17) {
+            model_transform = Mat4.scale(0.1, len / 2 + 0.1, 0.02);
+        }
+        else {
+            model_transform = Mat4.scale(0.1, len / 2, 0.02);
+        }
+        // from week 6 discussion and
+        // https://computergraphics.stackexchange.com/questions/4008/rotate-a-cylinder-from-xy-plane-to-given-points
+        const p = p1.minus(p2).normalized();
+        let v = vec3(0,1,0);
+        if (Math.abs(v.cross(p).norm()) < 0.1) {
+            v = vec3(0,0,1);
+            model_transform = Mat4.scale(0.05, 0.05, len/2);
+        }
+
+        const w = v.cross(p).normalized();
+        const theta = Math.acos(v.dot(p));
+        model_transform.pre_multiply(Mat4.rotation(theta, w[0], w[1], w[2]));
+        model_transform.pre_multiply(Mat4.translation(center[0], center[1], center[2]));
+        return model_transform;
     }
 
     update(context, program_state) {
     }
 
     draw(context, program_state, shadow) {
+        // draw flagpole
         let model_transform = Mat4.identity()
         .times(Mat4.translation(0, 30, -250))
         .times(Mat4.scale(.5, 60, .5))
@@ -1448,11 +1751,83 @@ class Flagpole {
         this.collision_box.emplace(model_transform, 0, 0);
         G.shapes.cylinder.draw(context, program_state, model_transform, G.materials.lamppost);
 
-        model_transform = Mat4.identity()
-        .times(Mat4.translation(-10, 55, -250))
-        .times(Mat4.scale(10, 5, 1));
+        // if (this.step < this.sample_count){
+        //     this.step += 0.05;
+        // }
+        // if (this.step >= this.sample_count){
+        //     this.step = 0;
+        //     this.curve_step +=1;
+        // }
+        // if (this.curve_step > (this.spline.num_points-2)){
+        //     this.curve_step=0;
+        // }
+        //
+        // let fn = this.spline.curve_fns[this.curve_step];
+        //
+        // let top_pos = fn(this.step / this.sample_count);
 
-        G.shapes.square.draw(context, program_state, model_transform, G.materials.whiteSquare);
+        let dt = Math.min(1 / 30, program_state.animation_delta_time / 1000);
+        let t_next = this.t_sim + dt;
+        let t_spline = 0.5 * Math.sin(1 / 4 * Math.PI * (this.t_sim) - Math.PI / 2) + 0.5;    // loops between 0 and 3
+
+        let top_pos = this.spline.curve_fns[0](t_spline);
+
+        while (this.t_sim < t_next) {
+            this.mesh.symplectic_update(this.timestep);
+            this.mesh.particles[9].pos = vec3(0, 60, -250);
+            this.mesh.particles[9].vel = vec3(0, 0, 0);
+            this.mesh.particles[9].acc = vec3(0, 0, 0);
+            this.mesh.particles[10].pos = vec3(0, 54, -250);
+            this.mesh.particles[10].vel = vec3(0, 0, 0);
+            this.mesh.particles[10].acc = vec3(0, 0, 0);
+            this.mesh.particles[11].pos = vec3(0, 48, -250);
+            this.mesh.particles[11].vel = vec3(0, 0, 0);
+            this.mesh.particles[11].acc = vec3(0, 0, 0);
+            this.mesh.particles[0].pos = top_pos;
+            this.mesh.particles[0].vel = vec3(0, 0, 0);
+            this.mesh.particles[0].acc = vec3(0, 0, 0);
+            this.t_sim += this.timestep;
+        }
+
+        // dampen velocity
+        for (let i = 0; i < this.mesh.particles.length; i++) {
+            this.mesh.particles[i].vel = this.mesh.particles[i].vel.times(0.8);
+        }
+
+        // draw flag mesh and spline
+        if (G.show_mesh) {
+            // draw particles
+            for (let p of this.mesh.particles) {
+                model_transform = Mat4.scale(0.25, 0.25, 0.25);
+                model_transform.pre_multiply(Mat4.translation(p.pos[0], p.pos[1], p.pos[2]));
+                G.shapes.sphere.draw(context, program_state, model_transform, G.materials.grass);
+            }
+            // draw springs
+            for (let i = 0; i < this.mesh.springs.length; i++) {
+                model_transform = this.spring_transform(i);
+                G.shapes.square.draw(context, program_state, model_transform, G.materials.whiteSquare);
+            }
+            // draw spline
+            for (let c of this.curves) {
+                c.draw(context, program_state);
+            }
+        }
+        // draw flag
+        else {
+            for (let v of this.triangle_vertices) {
+                let p1 = this.mesh.particles[v[0]].pos;
+                let p2 = this.mesh.particles[v[1]].pos;
+                let p3 = this.mesh.particles[v[2]].pos;
+                model_transform = this.triangle_transform(p1, p2, p3);
+                G.shapes.triangle.draw(context, program_state, model_transform, G.materials.whiteSquare);
+            }
+
+            // draw horizontal + vertical chain springs (fill in flag edges)
+            for (let i = 0; i < this.mesh.springs.length; i++) {
+                model_transform = this.spring_transform(i);
+                G.shapes.square.draw(context, program_state, model_transform, G.materials.whiteSquare);
+            }
+        }
     }
 }
 
@@ -1587,6 +1962,164 @@ class Fountain {
     }
 }
 
+
+//Bird
+class Birdy extends Shape {
+    constructor(v){
+        super( "position", "normal", "texture_coord" );
+        
+        //colors
+        this.color1=color(Math.random(),Math.random(),Math.random(),1);
+        this.color2=color(Math.random(),Math.random(),Math.random(),1);
+        this.color3=color(Math.random(),Math.random(),Math.random(),1);
+        this.color4=color(Math.random(),Math.random(),Math.random(),1);
+        this.yellow=color( 1,0.7,0,1 );
+
+        //arrays
+        this.points = [];
+        this.curves = [];
+
+        //variables
+        this.sample_count = 10;
+        this.step=0;
+        this.curve_step=0;
+        this.prev_vec=vec3(0,0,0);
+
+        //spline
+        this.spline = new Hermite_Spline(this.sample_count);
+
+        //populating spline
+        //v is array of array[ x,y,z,,tx,ty,tz]
+        for (let pt of v){
+            this.spline.add_point(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5])
+        }
+        for (let p of this.spline.points) {
+         this.points.push(p);
+        }
+         for (let c of this.spline.curve_fns) {
+         // console.log(c(2));
+             this.curves.push(new Curve_Shape(c, this.sample_count));
+    }  
+    }
+
+    draw(context, program_state, shadow ) {
+        let prev_step=0;
+
+        //to draw the curve
+        if (G.show_curve){
+        for (let c of this.curves) {
+
+        c.draw(context, program_state);
+            }
+        }
+
+        if (this.step <=this.sample_count){
+        prev_step=this.step;
+        this.step +=0.05;
+        }
+        if (this.step >this.sample_count){
+        this.step=0;
+        //prev_step=0
+        this.curve_step +=1;
+        }
+        if (this.curve_step > (this.spline.num_points-2)){
+        this.curve_step=0;
+
+        }
+        if (this.spline.num_points >0){
+        let fn= this.spline.curve_fns[this.curve_step];
+
+        let pos = fn(this.step/this.sample_count);
+
+        let next =fn ((this.step+1)/this.sample_count);
+        let dis=next.minus(pos);
+        let x= dis.normalized();
+        let dt=x.minus(this.prev_vec.normalized());
+        let y=dt.normalized();
+        this.prev_vec=x;
+        //change of basis
+        let u = [];
+        u[0] = x;
+        u[1] = y;
+        u[2] = u[1].cross(u[0]).normalized();
+        let change_of_bases = Mat4.identity();
+        for (let i = 0; i < 3; i++) {
+        change_of_bases[i][0] = u[0][i];
+        change_of_bases[i][1] = u[1][i];
+        change_of_bases[i][2] = u[2][i];
+        }
+
+        let model_transform=Mat4.scale(0.5,0.5,0.5)
+                        .times(Mat4.rotation(1.5,-1,0,0))
+                        .times(Mat4.rotation(1.5,0,1,0));
+
+        model_transform=model_transform.pre_multiply(change_of_bases);
+
+        model_transform= model_transform
+        .pre_multiply(Mat4.translation(pos[0],pos[1],pos[2]));    
+        this.drawing_parts(context,program_state,model_transform,shadow);
+            
+        }
+    }
+
+    drawing_parts(context,program_state,model_transform,shadow) {
+
+
+        let main_body_transform=model_transform
+        .times(Mat4.scale(0.5,0.4,1));
+        G.shapes.sphere.draw(context, program_state, main_body_transform, {...G.materials.brick_stairs,color:this.color1});
+
+        //head
+        let head_transform=model_transform
+        .times(Mat4.translation(0,0.35,1.2))
+        .times(Mat4.rotation(60,-1,0,0))
+        .times(Mat4.scale(0.25,0.30,0.5));
+        G.shapes.sphere.draw(context, program_state, head_transform, {...G.materials.brick_stairs,color:this.color2});
+
+        //beak
+        let beak_transform=model_transform
+        .times(Mat4.translation(0,0.35,1.8))
+        //.times(Mat4.rotation(60,-1,0,0))
+        .times(Mat4.scale(0.1,0.1,0.4));
+
+        G.shapes.cone.draw(context, program_state, beak_transform, {...G.materials.brick_stairs,color:this.yellow});
+
+        //right wing
+        let rocking_angle=Math.PI/13*Math.sin(2*Math.PI*1/1*program_state.animation_time/1000);
+        let theta=Math.PI/9;
+        let right_wing_transform=model_transform
+        .times(Mat4.translation(-1.1,0.2,0.2))
+        .times(Mat4.rotation(rocking_angle,0,0,1))
+        .times(Mat4.scale(1,0.1,0.3));
+        G.shapes.sphere.draw(context, program_state, right_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+
+        //left wing
+        let left_wing_transform=model_transform
+        .times(Mat4.translation(1.1,0.2,0.2))
+        .times(Mat4.rotation(-rocking_angle,0,0,1))
+        .times(Mat4.scale(1,0.1,0.3));
+        G.shapes.sphere.draw(context, program_state, left_wing_transform, {...G.materials.brick_stairs,color:this.color3});
+
+
+        //tail
+        let  tail_transform=model_transform
+        .times(Mat4.translation(0,-0.1,-1.2))
+        .times(Mat4.rotation(49.9,1,0,0))
+        .times(Mat4.scale(0.1,0.05,0.6));
+        G.shapes.sphere.draw(context, program_state, tail_transform, {...G.materials.brick_stairs,color:this.color4});
+        let tail_transform2=tail_transform
+        .times(Mat4.translation(1,-1,0));
+        G.shapes.sphere.draw(context, program_state, tail_transform2,{...G.materials.brick_stairs,color:this.color4});
+        let tail_transform3=tail_transform
+        .times(Mat4.translation(-1,-1,0));
+        G.shapes.sphere.draw(context, program_state, tail_transform3, {...G.materials.brick_stairs,color:this.color4});
+
+    }
+      update(context, program_state) {
+        }
+}
+
+
 // This is a general player. It is used to make adding new players easy. Use local player for the player
 // that you actually control in the game.
 class Player {
@@ -1596,6 +2129,7 @@ class Player {
                                             .times(Mat4.translation(Math.random() * 40 - 20, 10, Math.random() * 200 - 100))
                                             //.times(Mat4.scale(1, 2, 1))
                                             ;
+        this.player_model = new Articulated_Player(this.player_matrix);
         this.socket_id = socket_id;
         this.collision_box = G.register.register(vec3(0, 0, 0), socket_id);
 
@@ -1741,8 +2275,8 @@ class LocalPlayer extends Player {
     constructor() {
         super();
         this.camera_matrix = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
-        this.acceleration = new Vector([0, 0, 0]);
-        this.velocity = new Vector([0, 0, 0]);
+        this.acceleration = vec3(0, 0, 0);
+        this.velocity = vec3(0, 0, 0);
         this.jumping = false;
         this.speed = 0.1;
         this.rotation_speed = 0.01;
@@ -1771,6 +2305,9 @@ class LocalPlayer extends Player {
        //this.rocking_angle=0; // already defined in parent player class
        //this.rocking_angle2=0;// already defined in parent player class
        this.flip_angle=0;
+
+       this.ks = 0.5; // static force
+       this.kd = 0.5; // kinetic force
     }
 
     // for physics calculation
@@ -1784,6 +2321,14 @@ class LocalPlayer extends Player {
         let z = this.player_matrix[2];
 
         //console.log(x,y,z);
+
+        //check if player is walking 
+        if((G.controls.w || G.controls.a || G.controls.s || G.controls.d) && !this.jumping){
+            this.player_model.is_walking = true;
+        }else{
+            this.player_model.is_walking = false;
+        }
+
         this.velocity[2] = 0; // don't move unless button pressed
         if (G.controls.w === true) {
             G.key_was_pressed = true;
@@ -1815,14 +2360,20 @@ class LocalPlayer extends Player {
             //.times(Mat4.translation(0,0,-z));
         }
 
-        if (G.controls.shift === true) {
+        if (G.controls.shift === true && this.player_model.is_waving != true) {
             G.key_was_pressed = true;
             if (!this.jumping) {
                 this.jumping = true;
                 //this.player_matrix = this.player_matrix.times(Mat4.translation(0,1,0));
                 //console.log("m pressed");
-                this.apply_force([0, 9.8 * 0.04, 0]);
+                this.apply_force([0, 9.8 * 0.02, 0]);
             }
+        }
+
+        if(G.controls.f === true && this.jumping != true){
+            G.key_was_pressed = true;
+            this.player_model.is_waving = true;
+            this.player_model.set_wave_fn(this.player_model._get_current_end_effector_loc());
         }
         //desired = desired.map((x,i) => Vector.from(this.camera_matrix).mix(x, 0.1));
         //program_state.set_camera(desired);
@@ -1867,6 +2418,8 @@ class LocalPlayer extends Player {
     }
 
     update(context, program_state) {
+        this.acceleration = this.acceleration.times(0);
+
         this.key_pressed(context, program_state);
         // if (this.key_was_pressed) {
         //     this.camera_matrix = Mat4.inverse(this.player_matrix
@@ -1890,7 +2443,7 @@ class LocalPlayer extends Player {
         //this.velocity = this.velocity.plus(g); // apply gravity
 
         //console.log(this.velocity);
-        this.velocity = this.velocity.plus(this.acceleration);
+        
 
         // test if bottom collision
         this.collision_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], 0));
@@ -1913,14 +2466,31 @@ class LocalPlayer extends Player {
 
         this.collision_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], this.velocity[2]));
 
+        // moving into a collision
         if (this.collision_test(this.collision_matrix)) {
             this.velocity = vec3(0, this.velocity[1], 0);
         }
 
+        // already in a collision without moving
+        if (this.collision_test(this.player_matrix)) {
+            console.log("colliding in object");
+            //this.apply_force([0, 0, -this.speed * 3]);
+            //this.velocity = vec3(0, 0, this.speed * 3);
+            // apply a mass spring damper system to move the player outside of the object
+            const P_g = 2;
+            const x_t = 1;
+            const static_force = (P_g-x_t)*this.ks;
+            const dynamic_force = this.kd*(this.velocity[2]);
+            const normal_force = static_force - dynamic_force;
+            this.velocity = vec3(0, 0, normal_force);
+        }
+
+        
         this.player_matrix = this.player_matrix.times(Mat4.translation(0, this.velocity[1], this.velocity[2])); //this.velocity.z));
+        this.velocity = this.velocity.plus(this.acceleration);
         //this.player_matrix = this.player_matrix.times(Mat4.translation(0,-0.001,0,)); //this.velocity.z));
 
-        this.acceleration = this.acceleration.times(0);
+        
         //console.log(this.acceleration);
 
         // update camera
@@ -1928,12 +2498,15 @@ class LocalPlayer extends Player {
             //.times(Mat4.rotation(Math.PI/4,0,0,0))
         );
         program_state.set_camera(this.camera_matrix);
+
+        
         /*
         // tell the server our position
         G.socket.emit('update', {
             player_matrix: this.player_matrix,
         })
         */
+        this.player_model.update(this.player_matrix, program_state);
     }
 
     draw(context, program_state, shadow) {
@@ -1979,6 +2552,7 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.rotation(this.flip_angle,1,0,0));
             this.player_matrix=this.player_matrix.times(Mat4.translation(0,-0.75,0));
 
+            /*
             // The  player_matrix coordinates origin (0,0,0) will represent the bottom-middle of the upper body
             // First draw the upper body as a 1.2x1.5x0.6 rectangle centered at (0, 0.75, 0)
             // Upper Body:
@@ -2060,8 +2634,13 @@ class LocalPlayer extends Player {
             this.player_matrix=this.player_matrix.times(Mat4.scale(1/0.5,1/0.5,1/0.5))
                                                  .times(Mat4.translation(-rocking_angle3*0.25,0,0))
                                                  .times(Mat4.translation(0,-2,0));
-
-
+            */
+            //now debug human model first 
+            this.player_model.dof[20][0] = this.flip_angle;
+            this.player_model.set_color(this.colorArray[0],this.colorArray[3], this.colorArray[1], this.colorArray[2]);
+            this.player_model.draw(context, program_state, 
+                shadow ? G.materials.player : G.materials.pure);
+            
 
         // tell the server our position (put this here so the backflips replicate)
         G.socket.emit('update', {
